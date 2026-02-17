@@ -344,6 +344,66 @@ const AIRPORTS = [
   { code:"BUR", city:"Burbank", name:"Hollywood Burbank Airport", country:"US", region:"LAX", lat:34.20, lon:-118.36 },
   { code:"SNA", city:"Santa Ana", name:"John Wayne Airport", country:"US", region:"LAX", lat:33.68, lon:-117.87 },
   { code:"SAT", city:"San Antonio", name:"San Antonio Intl", country:"US", region:"SAT", lat:29.53, lon:-98.47 },
+  // US — secondary/regional airports
+  { code:"SAV", city:"Savannah", name:"Savannah/Hilton Head Intl", country:"US", region:"SAV", lat:32.13, lon:-81.20 },
+  { code:"CHS", city:"Charleston", name:"Charleston Intl", country:"US", region:"CHS", lat:32.90, lon:-80.04 },
+  { code:"MYR", city:"Myrtle Beach", name:"Myrtle Beach Intl", country:"US", region:"MYR", lat:33.68, lon:-78.93 },
+  { code:"EYW", city:"Key West", name:"Key West Intl", country:"US", region:"EYW", lat:24.56, lon:-81.76 },
+  { code:"PNS", city:"Pensacola", name:"Pensacola Intl", country:"US", region:"PNS", lat:30.47, lon:-87.19 },
+  { code:"VPS", city:"Destin", name:"Destin-Fort Walton Beach", country:"US", region:"VPS", lat:30.48, lon:-86.53 },
+  { code:"ECP", city:"Panama City Beach", name:"Northwest Florida Beaches Intl", country:"US", region:"ECP", lat:30.36, lon:-85.80 },
+  { code:"SRQ", city:"Sarasota", name:"Sarasota-Bradenton Intl", country:"US", region:"SRQ", lat:27.40, lon:-82.55 },
+  { code:"DAB", city:"Daytona Beach", name:"Daytona Beach Intl", country:"US", region:"DAB", lat:29.18, lon:-81.06 },
+  { code:"AVL", city:"Asheville", name:"Asheville Regional", country:"US", region:"AVL", lat:35.44, lon:-82.54 },
+  { code:"TYS", city:"Knoxville", name:"McGhee Tyson Airport", country:"US", region:"TYS", lat:35.81, lon:-83.99 },
+  { code:"LEX", city:"Lexington", name:"Blue Grass Airport", country:"US", region:"LEX", lat:38.04, lon:-84.61 },
+  { code:"SDF", city:"Louisville", name:"Louisville Intl", country:"US", region:"SDF", lat:38.17, lon:-85.74 },
+  { code:"RIC", city:"Richmond", name:"Richmond Intl", country:"US", region:"RIC", lat:37.51, lon:-77.32 },
+  { code:"ORF", city:"Norfolk", name:"Norfolk Intl", country:"US", region:"ORF", lat:36.89, lon:-76.20 },
+  { code:"BUF", city:"Buffalo", name:"Buffalo Niagara Intl", country:"US", region:"BUF", lat:42.94, lon:-78.73 },
+  { code:"ROC", city:"Rochester", name:"Rochester Intl", country:"US", region:"ROC", lat:43.12, lon:-77.67 },
+  { code:"SYR", city:"Syracuse", name:"Syracuse Hancock Intl", country:"US", region:"SYR", lat:43.11, lon:-76.11 },
+  { code:"ALB", city:"Albany", name:"Albany Intl", country:"US", region:"ALB", lat:42.75, lon:-73.80 },
+  { code:"BDL", city:"Hartford", name:"Bradley Intl", country:"US", region:"BDL", lat:41.94, lon:-72.68 },
+  { code:"PVD", city:"Providence", name:"T.F. Green Intl", country:"US", region:"PVD", lat:41.73, lon:-71.43 },
+  { code:"PWM", city:"Portland", name:"Portland Intl Jetport", country:"US", region:"PWM", lat:43.65, lon:-70.31 },
+  { code:"BTV", city:"Burlington", name:"Burlington Intl", country:"US", region:"BTV", lat:44.47, lon:-73.15 },
+  { code:"OMA", city:"Omaha", name:"Eppley Airfield", country:"US", region:"OMA", lat:41.30, lon:-95.89 },
+  { code:"MCI", city:"Kansas City", name:"Kansas City Intl", country:"US", region:"MCI", lat:39.30, lon:-94.71 },
+  { code:"DSM", city:"Des Moines", name:"Des Moines Intl", country:"US", region:"DSM", lat:41.53, lon:-93.66 },
+  { code:"MSN", city:"Madison", name:"Dane County Regional", country:"US", region:"MSN", lat:43.14, lon:-89.34 },
+  { code:"GRR", city:"Grand Rapids", name:"Gerald R. Ford Intl", country:"US", region:"GRR", lat:42.88, lon:-85.52 },
+  { code:"TUS", city:"Tucson", name:"Tucson Intl", country:"US", region:"TUS", lat:32.12, lon:-110.94 },
+  { code:"ELP", city:"El Paso", name:"El Paso Intl", country:"US", region:"ELP", lat:31.81, lon:-106.38 },
+  { code:"RNO", city:"Reno", name:"Reno-Tahoe Intl", country:"US", region:"RNO", lat:39.50, lon:-119.77 },
+  { code:"GEG", city:"Spokane", name:"Spokane Intl", country:"US", region:"GEG", lat:47.62, lon:-117.53 },
+  { code:"BZN", city:"Bozeman", name:"Bozeman Yellowstone Intl", country:"US", region:"BZN", lat:45.78, lon:-111.15 },
+  { code:"JAC", city:"Jackson Hole", name:"Jackson Hole Airport", country:"US", region:"JAC", lat:43.61, lon:-110.74 },
+  { code:"ASE", city:"Aspen", name:"Aspen-Pitkin County", country:"US", region:"ASE", lat:39.22, lon:-106.87 },
+  { code:"EGE", city:"Vail", name:"Eagle County Regional", country:"US", region:"EGE", lat:39.64, lon:-106.92 },
+  { code:"PSP", city:"Palm Springs", name:"Palm Springs Intl", country:"US", region:"PSP", lat:33.83, lon:-116.51 },
+  { code:"SBA", city:"Santa Barbara", name:"Santa Barbara Airport", country:"US", region:"SBA", lat:34.43, lon:-119.84 },
+  { code:"MRY", city:"Monterey", name:"Monterey Regional", country:"US", region:"MRY", lat:36.59, lon:-121.84 },
+  { code:"LIT", city:"Little Rock", name:"Clinton National", country:"US", region:"LIT", lat:34.73, lon:-92.22 },
+  { code:"OKC", city:"Oklahoma City", name:"Will Rogers World", country:"US", region:"OKC", lat:35.39, lon:-97.60 },
+  { code:"TUL", city:"Tulsa", name:"Tulsa Intl", country:"US", region:"TUL", lat:36.20, lon:-95.89 },
+  { code:"ICT", city:"Wichita", name:"Wichita Eisenhower Natl", country:"US", region:"ICT", lat:37.65, lon:-97.43 },
+  { code:"BHM", city:"Birmingham", name:"Birmingham-Shuttlesworth Intl", country:"US", region:"BHM", lat:33.56, lon:-86.75 },
+  { code:"HSV", city:"Huntsville", name:"Huntsville Intl", country:"US", region:"HSV", lat:34.64, lon:-86.77 },
+  { code:"MOB", city:"Mobile", name:"Mobile Regional", country:"US", region:"MOB", lat:30.69, lon:-88.24 },
+  { code:"GSP", city:"Greenville", name:"Greenville-Spartanburg Intl", country:"US", region:"GSP", lat:34.90, lon:-82.22 },
+  { code:"CAE", city:"Columbia", name:"Columbia Metropolitan", country:"US", region:"CAE", lat:33.94, lon:-81.12 },
+  { code:"ILM", city:"Wilmington", name:"Wilmington Intl", country:"US", region:"ILM", lat:34.27, lon:-77.90 },
+  { code:"XNA", city:"Fayetteville", name:"Northwest Arkansas Natl", country:"US", region:"XNA", lat:36.28, lon:-94.31 },
+  { code:"MDT", city:"Harrisburg", name:"Harrisburg Intl", country:"US", region:"MDT", lat:40.19, lon:-76.76 },
+  { code:"COS", city:"Colorado Springs", name:"Colorado Springs Airport", country:"US", region:"COS", lat:38.81, lon:-104.70 },
+  { code:"FAR", city:"Fargo", name:"Hector Intl", country:"US", region:"FAR", lat:46.92, lon:-96.82 },
+  { code:"FSD", city:"Sioux Falls", name:"Sioux Falls Regional", country:"US", region:"FSD", lat:43.58, lon:-96.74 },
+  { code:"RAP", city:"Rapid City", name:"Rapid City Regional", country:"US", region:"RAP", lat:44.05, lon:-103.05 },
+  { code:"MSO", city:"Missoula", name:"Missoula Montana Airport", country:"US", region:"MSO", lat:46.92, lon:-114.09 },
+  { code:"BIL", city:"Billings", name:"Billings Logan Intl", country:"US", region:"BIL", lat:45.81, lon:-108.54 },
+  { code:"EUG", city:"Eugene", name:"Mahlon Sweet Field", country:"US", region:"EUG", lat:44.12, lon:-123.21 },
+  { code:"RDM", city:"Redmond", name:"Redmond Municipal", country:"US", region:"RDM", lat:44.25, lon:-121.15 },
   // Europe (additional)
   { code:"BGO", city:"Bergen", name:"Bergen Flesland", country:"Norway", region:"BGO", lat:60.29, lon:5.22 },
   { code:"KEF", city:"Reykjavik", name:"Keflavik Intl", country:"Iceland", region:"KEF", lat:63.99, lon:-22.62 },
@@ -568,12 +628,12 @@ function canFlyRoute(al, origCode, destCode) {
   const dReg = airportRegion(destCode);
   if (!oReg || !dReg) return false;
 
-  // Same region = domestic route
+  // Same region = domestic route — airline must explicitly have DOM_ flag
   if (oReg === dReg) {
-    if (oReg === US && (al.routes & DOM_US)) return true;
-    if (oReg === EU && (al.routes & DOM_EU)) return true;
-    if (oReg === AS && (al.routes & DOM_AS)) return true;
-    // For other same-region, check if airline serves both regions
+    if (oReg === US) return (al.routes & DOM_US) > 0;
+    if (oReg === EU) return (al.routes & DOM_EU) > 0;
+    if (oReg === AS) return (al.routes & DOM_AS) > 0;
+    // For other regions (ME, AF, OC, SA), allow if airline serves that region
     return (al.routes & oReg) > 0;
   }
 
@@ -666,16 +726,19 @@ function generateFlights(parsed) {
       else cash = Math.max(cash, 399);
     } else if (cabin==="Business") {
       if (isLCC) {
-        cash = Math.round(dist * rand(0.08, 0.14));
+        cash = Math.round(dist * rand(0.12, 0.20));
       } else if (isDeal) {
-        cash = Math.round(dist * rand(0.10, 0.18));
+        cash = Math.round(dist * rand(0.15, 0.28));
       } else {
-        cash = Math.round(dist * rand(0.14, 0.25));
+        cash = Math.round(dist * rand(0.22, 0.40));
       }
-      if (dist < 1000) cash = Math.max(cash, 199);
-      else if (dist < 3000) cash = Math.max(cash, 399);
-      else if (dist < 5000) cash = Math.max(cash, 699);
-      else cash = Math.max(cash, 899);
+      // Domestic business: $249+ short, $349+ medium. Intl: $699+ transatlantic, $999+ ultra
+      if (dist < 1000) cash = Math.max(cash, 249);
+      else if (dist < 2000) cash = Math.max(cash, 349);
+      else if (dist < 3500) cash = Math.max(cash, 499);
+      else if (dist < 5000) cash = Math.max(cash, 799);
+      else if (dist < 7000) cash = Math.max(cash, 999);
+      else cash = Math.max(cash, 1199);
     } else {
       // First class
       if (isDeal) {
@@ -683,8 +746,10 @@ function generateFlights(parsed) {
       } else {
         cash = Math.round(dist * rand(0.25, 0.45));
       }
-      if (dist < 3000) cash = Math.max(cash, 599);
-      else cash = Math.max(cash, 1299);
+      if (dist < 1000) cash = Math.max(cash, 499);
+      else if (dist < 3000) cash = Math.max(cash, 799);
+      else if (dist < 5000) cash = Math.max(cash, 1499);
+      else cash = Math.max(cash, 1999);
     }
 
     // Miles based on real award charts — skewed toward sweet spots and deals
@@ -755,8 +820,12 @@ function generateFlights(parsed) {
 
 // City/region → airport code mappings for smart fallback parsing
 const CITY_MAP = {
-  // US Origins
-  "nyc":["JFK","EWR","LGA"],"new york":["JFK","EWR","LGA"],"newark":["EWR"],"lax":["LAX"],"los angeles":["LAX"],"sfo":["SFO"],"san francisco":["SFO"],"bay area":["SFO","OAK","SJC"],"ord":["ORD"],"chicago":["ORD","MDW"],"mia":["MIA"],"miami":["MIA"],"bos":["BOS"],"boston":["BOS"],"atl":["ATL"],"atlanta":["ATL"],"sea":["SEA"],"seattle":["SEA"],"dfw":["DFW"],"dallas":["DFW","DAL"],"iad":["IAD"],"dca":["DCA"],"dc":["IAD","DCA"],"washington":["IAD","DCA"],"iah":["IAH"],"houston":["IAH","HOU"],"den":["DEN"],"denver":["DEN"],"phx":["PHX"],"phoenix":["PHX"],"hnl":["HNL"],"honolulu":["HNL"],"hawaii":["HNL","OGG","KOA"],"las":["LAS"],"vegas":["LAS"],"msp":["MSP"],"minneapolis":["MSP"],"dtw":["DTW"],"detroit":["DTW"],"clt":["CLT"],"charlotte":["CLT"],"phl":["PHL"],"philadelphia":["PHL"],"msy":["MSY"],"new orleans":["MSY"],"stl":["STL"],"st louis":["STL"],"mco":["MCO"],"orlando":["MCO"],"fll":["FLL"],"fort lauderdale":["FLL"],"tpa":["TPA"],"tampa":["TPA"],"slc":["SLC"],"salt lake":["SLC"],"pdx":["PDX"],"portland":["PDX"],"aus":["AUS"],"austin":["AUS"],"bna":["BNA"],"nashville":["BNA"],"rdu":["RDU"],"raleigh":["RDU"],"pit":["PIT"],"pittsburgh":["PIT"],"pittsburg":["PIT"],"san diego":["SAN"],"san antonio":["SAT"],
+  // US Origins — major metros
+  "nyc":["JFK","EWR","LGA"],"new york":["JFK","EWR","LGA"],"newark":["EWR"],"lax":["LAX"],"los angeles":["LAX"],"sfo":["SFO"],"san francisco":["SFO"],"bay area":["SFO","OAK","SJC"],"ord":["ORD"],"chicago":["ORD","MDW"],"mia":["MIA"],"miami":["MIA"],"bos":["BOS"],"boston":["BOS"],"atl":["ATL"],"atlanta":["ATL"],"sea":["SEA"],"seattle":["SEA"],"dfw":["DFW"],"dallas":["DFW","DAL"],"iad":["IAD"],"dca":["DCA"],"dc":["IAD","DCA"],"washington":["IAD","DCA"],"iah":["IAH"],"houston":["IAH","HOU"],"den":["DEN"],"denver":["DEN"],"phx":["PHX"],"phoenix":["PHX"],"hnl":["HNL"],"honolulu":["HNL"],"hawaii":["HNL","OGG","KOA"],"las":["LAS"],"vegas":["LAS"],"las vegas":["LAS"],"msp":["MSP"],"minneapolis":["MSP"],"dtw":["DTW"],"detroit":["DTW"],"clt":["CLT"],"charlotte":["CLT"],"phl":["PHL"],"philadelphia":["PHL"],"philly":["PHL"],"msy":["MSY"],"new orleans":["MSY"],"nola":["MSY"],"stl":["STL"],"st louis":["STL"],"mco":["MCO"],"orlando":["MCO"],"fll":["FLL"],"fort lauderdale":["FLL"],"tpa":["TPA"],"tampa":["TPA"],"slc":["SLC"],"salt lake":["SLC"],"salt lake city":["SLC"],"pdx":["PDX"],"portland":["PDX"],"aus":["AUS"],"austin":["AUS"],"bna":["BNA"],"nashville":["BNA"],"rdu":["RDU"],"raleigh":["RDU"],"durham":["RDU"],"pit":["PIT"],"pittsburgh":["PIT"],"pittsburg":["PIT"],"san diego":["SAN"],"san antonio":["SAT"],
+  // US — secondary cities
+  "baltimore":["BWI"],"bwi":["BWI"],"sacramento":["SMF"],"oakland":["OAK"],"san jose":["SJC"],"burbank":["BUR"],"santa ana":["SNA"],"orange county":["SNA"],"john wayne":["SNA"],"ontario":["ONT"],"fort myers":["RSW"],"west palm beach":["PBI"],"palm beach":["PBI"],"jacksonville":["JAX"],"jax":["JAX"],"memphis":["MEM"],"indianapolis":["IND"],"indy":["IND"],"columbus":["CMH"],"cleveland":["CLE"],"cincinnati":["CVG"],"milwaukee":["MKE"],"albuquerque":["ABQ"],"boise":["BOI"],"anchorage":["ANC"],"alaska":["ANC"],"maui":["OGG"],"kona":["KOA"],
+  // US — smaller but common destinations
+  "savannah":["SAV"],"charleston":["CHS"],"myrtle beach":["MYR"],"key west":["EYW"],"pensacola":["PNS"],"destin":["VPS"],"panama city beach":["ECP"],"sarasota":["SRQ"],"daytona":["DAB"],"hilton head":["HHH"],"asheville":["AVL"],"knoxville":["TYS"],"lexington":["LEX"],"louisville":["SDF"],"richmond":["RIC"],"norfolk":["ORF"],"virginia beach":["ORF"],"buffalo":["BUF"],"rochester":["ROC"],"syracuse":["SYR"],"albany":["ALB"],"hartford":["BDL"],"providence":["PVD"],"portland maine":["PWM"],"burlington":["BTV"],"omaha":["OMA"],"kansas city":["MCI"],"kc":["MCI"],"des moines":["DSM"],"madison":["MSN"],"grand rapids":["GRR"],"tucson":["TUS"],"el paso":["ELP"],"reno":["RNO"],"spokane":["GEG"],"bozeman":["BZN"],"jackson hole":["JAC"],"aspen":["ASE"],"vail":["EGE"],"palm springs":["PSP"],"santa barbara":["SBA"],"monterey":["MRY"],"fresno":["FAT"],"bakersfield":["BFL"],"little rock":["LIT"],"oklahoma city":["OKC"],"tulsa":["TUL"],"wichita":["ICT"],"birmingham":["BHM"],"huntsville":["HSV"],"mobile":["MOB"],"greenville":["GSP"],"columbia":["CAE"],"wilmington":["ILM"],"fayetteville":["XNA"],"northwest arkansas":["XNA"],"bentonville":["XNA"],"harrisburg":["MDT"],"scranton":["AVP"],"pittsfield":["PIT"],"south bend":["SBN"],"sioux falls":["FSD"],"fargo":["FAR"],"bismarck":["BIS"],"rapid city":["RAP"],"missoula":["MSO"],"billings":["BIL"],"eugene":["EUG"],"bend":["RDM"],"redmond":["RDM"],"bellingham":["BLI"],"santa fe":["SAF"],"colorado springs":["COS"],"steamboat springs":["HDN"],"sun valley":["SUN"],"martha's vineyard":["MVY"],"nantucket":["ACK"],"cape cod":["HYA"],
   // Europe
   "london":["LHR","LGW"],"lhr":["LHR"],"england":["LHR","LGW","MAN"],"uk":["LHR","LGW","MAN","EDI"],"united kingdom":["LHR","LGW","MAN","EDI"],"britain":["LHR","LGW","MAN","EDI"],"paris":["CDG","ORY"],"cdg":["CDG"],"france":["CDG","ORY","LYS","MRS","NCE"],"frankfurt":["FRA"],"germany":["FRA","MUC","BER"],"amsterdam":["AMS"],"netherlands":["AMS"],"holland":["AMS"],"rome":["FCO"],"italy":["FCO","MXP","VCE","NAP"],"barcelona":["BCN"],"spain":["MAD","BCN","AGP","PMI"],"lisbon":["LIS"],"portugal":["LIS","OPO"],"istanbul":["IST","SAW"],"turkey":["IST","SAW","AYT"],"athens":["ATH"],"greece":["ATH","JTR","HER","CFU","SKG"],"zurich":["ZRH"],"switzerland":["ZRH","GVA"],"geneva":["GVA"],"madrid":["MAD"],"munich":["MUC"],"brussels":["BRU"],"belgium":["BRU"],"vienna":["VIE"],"austria":["VIE","SZG"],"dublin":["DUB"],"ireland":["DUB"],"warsaw":["WAW"],"poland":["WAW","KRK","GDN","WRO"],"krakow":["KRK"],"stockholm":["ARN"],"sweden":["ARN"],"copenhagen":["CPH"],"denmark":["CPH"],"oslo":["OSL"],"norway":["OSL","BGO"],"helsinki":["HEL"],"finland":["HEL"],"prague":["PRG"],"czech republic":["PRG"],"czechia":["PRG"],"budapest":["BUD"],"hungary":["BUD"],"bucharest":["OTP"],"romania":["OTP"],"berlin":["BER"],"milan":["MXP","BGY"],"naples":["NAP"],"venice":["VCE"],"nice":["NCE"],"edinburgh":["EDI"],"manchester":["MAN"],"bergen":["BGO"],"reykjavik":["KEF"],"iceland":["KEF"],"scotland":["EDI","GLA"],"lyon":["LYS"],"marseille":["MRS"],"split":["SPU"],"croatia":["ZAG","SPU","DBV"],"dubrovnik":["DBV"],"riga":["RIX"],"latvia":["RIX"],"vilnius":["VNO"],"lithuania":["VNO"],"tallinn":["TLL"],"estonia":["TLL"],"glasgow":["GLA"],"antalya":["AYT"],"salzburg":["SZG"],"tenerife":["TFS"],"seville":["SVQ"],"porto":["OPO"],"thessaloniki":["SKG"],"santorini":["JTR"],"corfu":["CFU"],"crete":["HER"],"heraklion":["HER"],"palma":["PMI"],"mallorca":["PMI"],"malaga":["AGP"],"sicily":["CTA","PMO"],"catania":["CTA"],"palermo":["PMO"],"sofia":["SOF"],"bulgaria":["SOF"],"zagreb":["ZAG"],"belgrade":["BEG"],"serbia":["BEG"],"gdansk":["GDN"],"wroclaw":["WRO"],"mykonos":["JMK"],"santorini":["JTR"],"rhodes":["RHO"],"europe":["LHR","CDG","FRA","AMS","FCO","BCN","LIS","MAD","MUC","VIE","PRG","BER","DUB"],
   // Asia
@@ -812,7 +881,7 @@ async function parseAI(query) {
     return await r.json();
   } catch(e) {
     const q = query.toLowerCase();
-    let cabin = /cheap|budget|affordable/.test(q)?"Economy":"Business";
+    let cabin = /\b(?:business|biz|j class)\b/.test(q)?"Business":/\b(?:first|f class|suites)\b/.test(q)?"First":/\b(?:premium economy|premium eco|pe class)\b/.test(q)?"Premium Economy":"Economy";
     for (const c of ["first","business","premium economy","economy"]) if(q.includes(c)){cabin=c.charAt(0).toUpperCase()+c.slice(1);break;}
     let alliance="any";
     if(q.includes("star alliance"))alliance="Star Alliance"; else if(q.includes("oneworld"))alliance="oneworld"; else if(q.includes("skyteam"))alliance="SkyTeam"; else if(q.includes("budget"))alliance="Budget";
