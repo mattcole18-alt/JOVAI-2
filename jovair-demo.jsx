@@ -629,52 +629,60 @@ function generateFlights(parsed) {
       if (dist < 2000) continue; // they only fly long-haul
     }
 
-    // DEAL-FOCUSED pricing — Jovair finds the best deals, not average prices
-    // Real examples: Air Premia NYC→Seoul $399 one-way, French Bee SFO→Paris $249
-    // We skew toward the low end because Jovair's whole point is finding deals
-    const isDeal = Math.random() < 0.6; // 60% of results are deal-priced
+    // REALISTIC deal pricing — competitive but believable
+    // Real one-way benchmarks (what you'd actually find on sale):
+    //   Economy SFO→Europe: $280-$450 | NYC→London: $250-$400 | Domestic: $49-$180
+    //   Business SFO→Europe: $900-$1800 | NYC→London: $700-$1400
+    //   LCC one-way: French Bee SFO→Paris $249, Norse JFK→London $129, PLAY $99 to Iceland
+    const isDeal = Math.random() < 0.5; // 50% of results are deal-priced
     const isLCC = al.type==="budget" || al.type==="lowcost-longhaul";
     let cash, milesLo, milesHi;
     if (cabin==="Economy") {
       if (isLCC) {
-        // Low-cost carriers: genuinely cheap
-        cash = Math.round(dist * rand(0.025, 0.05));
+        cash = Math.round(dist * rand(0.035, 0.06));
       } else if (isDeal) {
-        // Deal economy on full-service: discounted fares, sales, error fares
-        cash = Math.round(dist * rand(0.03, 0.06));
+        cash = Math.round(dist * rand(0.045, 0.07));
       } else {
-        cash = Math.round(dist * rand(0.04, 0.075));
+        cash = Math.round(dist * rand(0.055, 0.09));
       }
-      cash = Math.max(cash, 35);
+      // Realistic minimums by distance
+      if (dist < 1000) cash = Math.max(cash, 49);
+      else if (dist < 3000) cash = Math.max(cash, 89);
+      else if (dist < 5000) cash = Math.max(cash, 199);
+      else cash = Math.max(cash, 259);
     } else if (cabin==="Premium Economy") {
       if (isLCC) {
-        cash = Math.round(dist * rand(0.035, 0.065));
+        cash = Math.round(dist * rand(0.05, 0.08));
       } else if (isDeal) {
-        // Premium economy deals — fly premium for economy prices
-        cash = Math.round(dist * rand(0.04, 0.075));
+        cash = Math.round(dist * rand(0.06, 0.10));
       } else {
-        cash = Math.round(dist * rand(0.055, 0.095));
+        cash = Math.round(dist * rand(0.08, 0.13));
       }
-      cash = Math.max(cash, 49);
+      if (dist < 1000) cash = Math.max(cash, 79);
+      else if (dist < 3000) cash = Math.max(cash, 149);
+      else if (dist < 5000) cash = Math.max(cash, 299);
+      else cash = Math.max(cash, 399);
     } else if (cabin==="Business") {
       if (isLCC) {
-        // Low-cost long-haul business (e.g. ZIPAIR, Air Premia)
-        cash = Math.round(dist * rand(0.06, 0.12));
+        cash = Math.round(dist * rand(0.08, 0.14));
       } else if (isDeal) {
-        // Business deals — the holy grail. 35K miles PRG→NYC type deals
-        cash = Math.round(dist * rand(0.07, 0.15));
+        cash = Math.round(dist * rand(0.10, 0.18));
       } else {
-        cash = Math.round(dist * rand(0.10, 0.20));
+        cash = Math.round(dist * rand(0.14, 0.25));
       }
-      cash = Math.max(cash, 99);
+      if (dist < 1000) cash = Math.max(cash, 199);
+      else if (dist < 3000) cash = Math.max(cash, 399);
+      else if (dist < 5000) cash = Math.max(cash, 699);
+      else cash = Math.max(cash, 899);
     } else {
       // First class
       if (isDeal) {
-        cash = Math.round(dist * rand(0.12, 0.25));
+        cash = Math.round(dist * rand(0.18, 0.30));
       } else {
-        cash = Math.round(dist * rand(0.18, 0.40));
+        cash = Math.round(dist * rand(0.25, 0.45));
       }
-      cash = Math.max(cash, 199);
+      if (dist < 3000) cash = Math.max(cash, 599);
+      else cash = Math.max(cash, 1299);
     }
 
     // Miles based on real award charts — skewed toward sweet spots and deals
