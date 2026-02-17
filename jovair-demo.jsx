@@ -1,0 +1,1640 @@
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+
+// ═══════════════════════════════════════════════════════════════
+// JOVAIR — AI-Powered Flight Search Engine (Enhanced Demo)
+// ═══════════════════════════════════════════════════════════════
+
+const _jvInit = (() => {
+  if (typeof document === "undefined") return;
+  document.documentElement.style.backgroundColor = "#f6f7f9";
+  document.body.style.backgroundColor = "#f6f7f9";
+  document.body.style.margin = "0";
+
+  if (!document.head.querySelector('link[href*="Manrope"]')) {
+    const l = document.createElement("link");
+    l.href = "https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap";
+    l.rel = "stylesheet";
+    document.head.appendChild(l);
+  }
+  if (!document.head.querySelector("style[data-jv2]")) {
+    const s = document.createElement("style");
+    s.setAttribute("data-jv2", "1");
+    s.textContent = `
+@keyframes jv-fadein { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes jv-fadeinleft { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+@keyframes jv-pulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+@keyframes jv-shimmer { 0%{background-position:-600px 0} 100%{background-position:600px 0} }
+@keyframes jv-spin { to{transform:rotate(360deg)} }
+@keyframes jv-glow { 0%,100%{box-shadow:0 0 8px rgba(0,180,160,.2)} 50%{box-shadow:0 0 24px rgba(0,180,160,.5)} }
+@keyframes jv-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+@keyframes jv-float2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+@keyframes jv-typing { 0%{width:0} 100%{width:100%} }
+@keyframes jv-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+@keyframes jv-countup { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+@keyframes jv-scanline { 0%{left:0} 100%{left:calc(100% - 60px)} }
+@keyframes jv-progress { from{width:0%} to{width:100%} }
+@keyframes jv-dot1 { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
+@keyframes jv-dot2 { 0%,80%,100%{transform:scale(0)} 50%{transform:scale(1)} }
+@keyframes jv-dot3 { 0%,80%,100%{transform:scale(0)} 60%{transform:scale(1)} }
+@keyframes jv-ribbon { from{opacity:0;transform:translateY(-100%)} to{opacity:1;transform:translateY(0)} }
+@keyframes jv-slidedown { from{max-height:0;opacity:0} to{max-height:800px;opacity:1} }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html, body { background:#f6f7f9; }
+body { font-family:'Manrope',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+.jv-mono { font-family:'IBM Plex Mono',monospace; }
+input:focus { outline:none; }
+button { font-family:'Manrope',system-ui,sans-serif; }
+::selection { background:rgba(0,180,160,.2); }
+`;
+    document.head.appendChild(s);
+  }
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// AIRLINES (Original 17 + Expanded)
+// ═══════════════════════════════════════════════════════════════
+
+// Route type constants for realistic airline-route matching
+const US=1,EU=2,AS=4,ME=8,AF=16,SA=32,OC=64,CA=128; // bitmask regions
+const DOM_US=256,DOM_EU=512,DOM_AS=1024; // domestic route flags
+
+const AIRLINES = [
+  // US Big 3 — fly everywhere
+  { code:"UA", name:"United Airlines", program:"MileagePlus", alliance:"Star Alliance", color:"#0032A0", transfers:["Chase UR","Bilt"], routes:US|EU|AS|ME|SA|CA|OC|DOM_US, type:"full-service" },
+  { code:"AA", name:"American Airlines", program:"AAdvantage", alliance:"oneworld", color:"#0078D2", transfers:["Citi TYP","Bilt"], routes:US|EU|AS|ME|SA|CA|DOM_US, type:"full-service" },
+  { code:"DL", name:"Delta Air Lines", program:"SkyMiles", alliance:"SkyTeam", color:"#003A70", transfers:["Amex MR"], routes:US|EU|AS|ME|SA|CA|AF|OC|DOM_US, type:"full-service" },
+  // US carriers — domestic + some international
+  { code:"AS", name:"Alaska Airlines", program:"Mileage Plan", alliance:"oneworld", color:"#003580", transfers:["Chase UR","Bilt"], routes:US|CA|DOM_US, type:"full-service" },
+  { code:"B6", name:"JetBlue", program:"TrueBlue", alliance:"Independent", color:"#003DA5", transfers:["Amex MR","Chase UR"], routes:US|EU|CA|DOM_US, type:"full-service" },
+  { code:"HA", name:"Hawaiian Airlines", program:"HawaiianMiles", alliance:"Independent", color:"#00A0DF", transfers:["Amex MR","Chase UR"], routes:US|OC|AS|DOM_US, type:"full-service" },
+  // Canadian
+  { code:"AC", name:"Air Canada", program:"Aeroplan", alliance:"Star Alliance", color:"#d81e05", transfers:["Chase UR","Amex MR","Capital One","Bilt"], routes:US|EU|AS|ME|SA|CA|DOM_US, type:"full-service" },
+  // European legacy — fly transatlantic, intra-Europe, to Asia/ME
+  { code:"LH", name:"Lufthansa", program:"Miles & More", alliance:"Star Alliance", color:"#05164d", transfers:["Amex MR"], routes:US|EU|AS|ME|AF|SA|DOM_EU, type:"full-service" },
+  { code:"BA", name:"British Airways", program:"Avios", alliance:"oneworld", color:"#075AAA", transfers:["Chase UR","Amex MR","Capital One"], routes:US|EU|AS|ME|AF|SA|CA|DOM_EU, type:"full-service" },
+  { code:"AF", name:"Air France/KLM", program:"Flying Blue", alliance:"SkyTeam", color:"#002157", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|AF|SA|CA|DOM_EU, type:"full-service" },
+  { code:"VS", name:"Virgin Atlantic", program:"Flying Club", alliance:"SkyTeam", color:"#E01224", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|CA, type:"full-service" },
+  { code:"LX", name:"Swiss International", program:"SWISS Miles & More", alliance:"Star Alliance", color:"#DC143C", transfers:["Amex MR","Chase UR"], routes:US|EU|AS|ME|AF|DOM_EU, type:"full-service" },
+  { code:"SK", name:"SAS", program:"EuroBonus", alliance:"Star Alliance", color:"#003580", transfers:["Amex MR"], routes:US|EU|AS|DOM_EU, type:"full-service" },
+  { code:"IB", name:"Iberia", program:"Avios", alliance:"oneworld", color:"#FFC72C", transfers:["Amex MR","Chase UR","Citi TYP"], routes:US|EU|SA|AF|DOM_EU, type:"full-service" },
+  { code:"AY", name:"Finnair", program:"Finnair Plus", alliance:"oneworld", color:"#003580", transfers:["Amex MR"], routes:US|EU|AS|DOM_EU, type:"full-service" },
+  // Turkish — massive network
+  { code:"TK", name:"Turkish Airlines", program:"Miles&Smiles", alliance:"Star Alliance", color:"#C8102E", transfers:["Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|AF|SA|CA|DOM_EU, type:"full-service" },
+  // Asian carriers
+  { code:"SQ", name:"Singapore Airlines", program:"KrisFlyer", alliance:"Star Alliance", color:"#F0AB00", transfers:["Chase UR","Amex MR","Citi TYP","Capital One"], routes:US|EU|AS|OC|ME|DOM_AS, type:"full-service" },
+  { code:"NH", name:"ANA", program:"Mileage Club", alliance:"Star Alliance", color:"#00467F", transfers:["Amex MR"], routes:US|EU|AS|DOM_AS, type:"full-service" },
+  { code:"CX", name:"Cathay Pacific", program:"Asia Miles", alliance:"oneworld", color:"#005D63", transfers:["Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|OC|ME|DOM_AS, type:"full-service" },
+  { code:"JL", name:"Japan Airlines", program:"Mileage Bank", alliance:"oneworld", color:"#C8102E", transfers:["Chase UR","Citi TYP"], routes:US|EU|AS|OC|DOM_AS, type:"full-service" },
+  { code:"KE", name:"Korean Air", program:"SKYPASS", alliance:"SkyTeam", color:"#003D82", transfers:["Amex MR"], routes:US|EU|AS|OC|DOM_AS, type:"full-service" },
+  { code:"BR", name:"EVA Air", program:"Eva Air Infinity Mileage Lands", alliance:"Star Alliance", color:"#0066CC", transfers:["Amex MR"], routes:US|EU|AS|OC|DOM_AS, type:"full-service" },
+  { code:"CI", name:"China Airlines", program:"Dynasty Flyer", alliance:"SkyTeam", color:"#0066CC", transfers:["Amex MR"], routes:US|EU|AS|OC|DOM_AS, type:"full-service" },
+  { code:"CA", name:"Air China", program:"Frequent Flyer Program", alliance:"Star Alliance", color:"#FF0000", transfers:["Amex MR"], routes:US|EU|AS|DOM_AS, type:"full-service" },
+  { code:"AI", name:"Air India", program:"Flying Returns", alliance:"Star Alliance", color:"#0033CC", transfers:["Amex MR"], routes:US|EU|AS|ME|DOM_AS, type:"full-service" },
+  { code:"MH", name:"Malaysia Airlines", program:"Enrich", alliance:"oneworld", color:"#003C71", transfers:["Amex MR"], routes:EU|AS|ME|OC|DOM_AS, type:"full-service" },
+  // Middle East mega-carriers
+  { code:"EK", name:"Emirates", program:"Skywards", alliance:"Independent", color:"#D71921", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|AF|SA|OC, type:"full-service" },
+  { code:"QR", name:"Qatar Airways", program:"Privilege Club", alliance:"oneworld", color:"#5C0632", transfers:["Citi TYP"], routes:US|EU|AS|ME|AF|SA|OC, type:"full-service" },
+  // African
+  { code:"ET", name:"Ethiopian Airlines", program:"ShebaMiles", alliance:"Star Alliance", color:"#078930", transfers:[], routes:US|EU|AS|ME|AF, type:"full-service" },
+  // South American
+  { code:"LA", name:"LATAM", program:"Frequent Flyer", alliance:"Independent", color:"#000000", transfers:["Chase UR","Citi TYP"], routes:US|EU|SA|OC, type:"full-service" },
+  // Oceania
+  { code:"QF", name:"Qantas", program:"Frequent Flyer", alliance:"oneworld", color:"#E0002A", transfers:[], routes:US|EU|AS|OC|DOM_AS, type:"full-service" },
+  // Budget — US domestic
+  { code:"NK", name:"Spirit Airlines", program:null, alliance:"Budget", color:"#FFD700", transfers:[], routes:DOM_US|CA, type:"budget" },
+  { code:"F9", name:"Frontier Airlines", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:DOM_US|CA, type:"budget" },
+  { code:"WN", name:"Southwest Airlines", program:null, alliance:"Budget", color:"#0066CC", transfers:["Chase UR"], routes:DOM_US|CA, type:"budget" },
+  { code:"MX", name:"Breeze Airways", program:null, alliance:"Budget", color:"#0066CC", transfers:[], routes:DOM_US, type:"budget" },
+  // Budget — Europe
+  { code:"FR", name:"Ryanair", program:null, alliance:"Budget", color:"#003DA5", transfers:[], routes:DOM_EU|AF, type:"budget" },
+  { code:"U2", name:"easyJet", program:null, alliance:"Budget", color:"#FFC72C", transfers:[], routes:DOM_EU|AF, type:"budget" },
+  { code:"W6", name:"Wizz Air", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:DOM_EU|ME, type:"budget" },
+  { code:"DY", name:"Norwegian", program:null, alliance:"Budget", color:"#FF0000", transfers:[], routes:DOM_EU|US, type:"budget" },
+  { code:"VY", name:"Vueling", program:null, alliance:"Budget", color:"#003DA5", transfers:[], routes:DOM_EU, type:"budget" },
+  // Budget — Canada
+  { code:"WS", name:"WestJet", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:DOM_US|CA|US, type:"budget" },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// AIRPORTS (Original + Expanded, deduped)
+// ═══════════════════════════════════════════════════════════════
+
+const AIRPORTS = [
+  // US
+  { code:"JFK", city:"New York", name:"John F. Kennedy Intl", country:"US", region:"NYC", lat:40.64, lon:-73.78 },
+  { code:"EWR", city:"Newark", name:"Newark Liberty Intl", country:"US", region:"NYC", lat:40.69, lon:-74.18 },
+  { code:"LGA", city:"New York", name:"LaGuardia", country:"US", region:"NYC", lat:40.78, lon:-73.87 },
+  { code:"LAX", city:"Los Angeles", name:"Los Angeles Intl", country:"US", region:"LAX", lat:33.94, lon:-118.41 },
+  { code:"SFO", city:"San Francisco", name:"San Francisco Intl", country:"US", region:"SFO", lat:37.62, lon:-122.38 },
+  { code:"ORD", city:"Chicago", name:"O'Hare Intl", country:"US", region:"CHI", lat:41.98, lon:-87.91 },
+  { code:"MIA", city:"Miami", name:"Miami Intl", country:"US", region:"MIA", lat:25.80, lon:-80.29 },
+  { code:"BOS", city:"Boston", name:"Boston Logan Intl", country:"US", region:"BOS", lat:42.37, lon:-71.02 },
+  { code:"ATL", city:"Atlanta", name:"Hartsfield-Jackson Intl", country:"US", region:"ATL", lat:33.64, lon:-84.43 },
+  { code:"SEA", city:"Seattle", name:"Seattle-Tacoma Intl", country:"US", region:"SEA", lat:47.45, lon:-122.31 },
+  { code:"DFW", city:"Dallas", name:"Dallas/Fort Worth Intl", country:"US", region:"DFW", lat:32.90, lon:-97.04 },
+  { code:"IAD", city:"Washington", name:"Dulles Intl", country:"US", region:"WAS", lat:38.95, lon:-77.46 },
+  { code:"DCA", city:"Washington", name:"Reagan National", country:"US", region:"WAS", lat:38.85, lon:-77.04 },
+  { code:"IAH", city:"Houston", name:"George Bush Intl", country:"US", region:"IAH", lat:29.98, lon:-95.34 },
+  { code:"DEN", city:"Denver", name:"Denver Intl", country:"US", region:"DEN", lat:39.86, lon:-104.67 },
+  { code:"PHX", city:"Phoenix", name:"Phoenix Sky Harbor", country:"US", region:"PHX", lat:33.44, lon:-112.01 },
+  { code:"HNL", city:"Honolulu", name:"Daniel K. Inouye Intl", country:"US", region:"HNL", lat:21.32, lon:-157.93 },
+  { code:"LAS", city:"Las Vegas", name:"Harry Reid Intl", country:"US", region:"LAS", lat:36.08, lon:-115.15 },
+  { code:"MSP", city:"Minneapolis", name:"Minneapolis-St Paul Intl", country:"US", region:"MSP", lat:44.88, lon:-93.22 },
+  { code:"DTW", city:"Detroit", name:"Detroit Metro", country:"US", region:"DTW", lat:42.21, lon:-83.35 },
+  { code:"CLT", city:"Charlotte", name:"Charlotte Douglas Intl", country:"US", region:"CLT", lat:35.21, lon:-80.94 },
+  { code:"PHL", city:"Philadelphia", name:"Philadelphia Intl", country:"US", region:"PHL", lat:39.87, lon:-75.24 },
+  { code:"BWI", city:"Baltimore", name:"Baltimore/Washington Intl", country:"US", region:"BWI", lat:39.18, lon:-76.67 },
+  { code:"SAN", city:"San Diego", name:"San Diego Intl", country:"US", region:"SAN", lat:32.73, lon:-117.19 },
+  // Europe
+  { code:"LHR", city:"London", name:"Heathrow", country:"UK", region:"LON", lat:51.47, lon:-0.46 },
+  { code:"CDG", city:"Paris", name:"Charles de Gaulle", country:"France", region:"PAR", lat:49.01, lon:2.55 },
+  { code:"FRA", city:"Frankfurt", name:"Frankfurt", country:"Germany", region:"FRA", lat:50.04, lon:8.57 },
+  { code:"AMS", city:"Amsterdam", name:"Schiphol", country:"Netherlands", region:"AMS", lat:52.31, lon:4.76 },
+  { code:"FCO", city:"Rome", name:"Fiumicino", country:"Italy", region:"ROM", lat:41.80, lon:12.25 },
+  { code:"BCN", city:"Barcelona", name:"El Prat", country:"Spain", region:"BCN", lat:41.30, lon:2.08 },
+  { code:"LIS", city:"Lisbon", name:"Humberto Delgado", country:"Portugal", region:"LIS", lat:38.78, lon:-9.14 },
+  { code:"IST", city:"Istanbul", name:"Istanbul", country:"Turkey", region:"IST", lat:41.28, lon:28.75 },
+  { code:"ATH", city:"Athens", name:"Eleftherios Venizelos", country:"Greece", region:"ATH", lat:37.94, lon:23.95 },
+  { code:"ZRH", city:"Zurich", name:"Zurich", country:"Switzerland", region:"ZRH", lat:47.46, lon:8.55 },
+  { code:"GVA", city:"Geneva", name:"Geneva", country:"Switzerland", region:"GVA", lat:46.24, lon:6.11 },
+  { code:"MAD", city:"Madrid", name:"Adolfo Suárez Madrid-Barajas", country:"Spain", region:"MAD", lat:40.42, lon:-3.60 },
+  { code:"MUC", city:"Munich", name:"Munich Airport", country:"Germany", region:"MUC", lat:48.35, lon:11.79 },
+  { code:"BRU", city:"Brussels", name:"Brussels-Zaventem", country:"Belgium", region:"BRU", lat:50.90, lon:4.48 },
+  { code:"VIE", city:"Vienna", name:"Vienna Intl", country:"Austria", region:"VIE", lat:48.11, lon:16.57 },
+  { code:"DUB", city:"Dublin", name:"Dublin", country:"Ireland", region:"DUB", lat:53.43, lon:-6.25 },
+  { code:"LGW", city:"London", name:"Gatwick", country:"UK", region:"LGW", lat:51.15, lon:-0.18 },
+  { code:"STN", city:"London", name:"Stansted", country:"UK", region:"STN", lat:51.89, lon:0.37 },
+  { code:"WAW", city:"Warsaw", name:"Warsaw Chopin", country:"Poland", region:"WAW", lat:52.17, lon:21.02 },
+  { code:"KRK", city:"Krakow", name:"John Paul II Intl", country:"Poland", region:"KRK", lat:50.08, lon:19.79 },
+  { code:"ARN", city:"Stockholm", name:"Stockholm Arlanda", country:"Sweden", region:"ARN", lat:59.65, lon:17.93 },
+  { code:"CPH", city:"Copenhagen", name:"Copenhagen", country:"Denmark", region:"CPH", lat:55.62, lon:12.66 },
+  { code:"OSL", city:"Oslo", name:"Oslo Airport", country:"Norway", region:"OSL", lat:60.20, lon:11.09 },
+  { code:"HEL", city:"Helsinki", name:"Helsinki-Vantaa", country:"Finland", region:"HEL", lat:60.32, lon:25.25 },
+  // Asia
+  { code:"NRT", city:"Tokyo", name:"Narita Intl", country:"Japan", region:"TYO", lat:35.77, lon:140.39 },
+  { code:"HND", city:"Tokyo", name:"Haneda", country:"Japan", region:"TYO", lat:35.55, lon:139.78 },
+  { code:"SIN", city:"Singapore", name:"Changi", country:"Singapore", region:"SIN", lat:1.36, lon:103.99 },
+  { code:"HKG", city:"Hong Kong", name:"Hong Kong Intl", country:"Hong Kong", region:"HKG", lat:22.31, lon:113.92 },
+  { code:"ICN", city:"Seoul", name:"Incheon Intl", country:"South Korea", region:"ICN", lat:37.46, lon:126.44 },
+  { code:"BKK", city:"Bangkok", name:"Suvarnabhumi", country:"Thailand", region:"BKK", lat:13.69, lon:100.75 },
+  { code:"DXB", city:"Dubai", name:"Dubai Intl", country:"UAE", region:"DXB", lat:25.25, lon:55.36 },
+  { code:"DOH", city:"Doha", name:"Hamad Intl", country:"Qatar", region:"DOH", lat:25.27, lon:51.61 },
+  { code:"SYD", city:"Sydney", name:"Kingsford Smith", country:"Australia", region:"SYD", lat:-33.95, lon:151.18 },
+  { code:"DEL", city:"Delhi", name:"Indira Gandhi Intl", country:"India", region:"DEL", lat:28.56, lon:77.10 },
+  { code:"CPT", city:"Cape Town", name:"Cape Town Intl", country:"South Africa", region:"CPT", lat:-33.97, lon:18.60 },
+  { code:"GRU", city:"São Paulo", name:"Guarulhos Intl", country:"Brazil", region:"GRU", lat:-23.44, lon:-46.47 },
+  { code:"MEX", city:"Mexico City", name:"Benito Juárez Intl", country:"Mexico", region:"MEX", lat:19.44, lon:-99.07 },
+  { code:"CUN", city:"Cancún", name:"Cancún Intl", country:"Mexico", region:"CUN", lat:21.04, lon:-86.88 },
+  { code:"TPE", city:"Taipei", name:"Taiwan Taoyuan Intl", country:"Taiwan", region:"TPE", lat:25.08, lon:121.23 },
+  { code:"PVG", city:"Shanghai", name:"Shanghai Pudong", country:"China", region:"PVG", lat:31.14, lon:121.81 },
+  { code:"PEK", city:"Beijing", name:"Beijing Capital", country:"China", region:"PEK", lat:40.08, lon:116.58 },
+  { code:"BOM", city:"Mumbai", name:"Bombay High", country:"India", region:"BOM", lat:19.08, lon:72.88 },
+  { code:"BLR", city:"Bangalore", name:"Kempegowda Intl", country:"India", region:"BLR", lat:13.20, lon:77.71 },
+  { code:"KUL", city:"Kuala Lumpur", name:"KL Intl", country:"Malaysia", region:"KUL", lat:2.73, lon:101.71 },
+  { code:"CGK", city:"Jakarta", name:"Soekarno-Hatta", country:"Indonesia", region:"CGK", lat:-6.13, lon:106.66 },
+  { code:"KIX", city:"Osaka", name:"Kansai Intl", country:"Japan", region:"KIX", lat:34.43, lon:135.24 },
+  { code:"AUH", city:"Abu Dhabi", name:"Abu Dhabi Intl", country:"UAE", region:"AUH", lat:24.43, lon:54.65 },
+  { code:"MNL", city:"Manila", name:"Ninoy Aquino Intl", country:"Philippines", region:"MNL", lat:14.11, lon:121.02 },
+  { code:"DPS", city:"Bali", name:"Ngurah Rai Intl", country:"Indonesia", region:"DPS", lat:-8.77, lon:115.17 },
+  { code:"SGN", city:"Ho Chi Minh City", name:"Tan Son Nhat Intl", country:"Vietnam", region:"SGN", lat:10.82, lon:106.65 },
+  { code:"HAN", city:"Hanoi", name:"Noi Bai Intl", country:"Vietnam", region:"HAN", lat:21.20, lon:105.80 },
+  { code:"CTU", city:"Chengdu", name:"Chengdu Shuangliu Intl", country:"China", region:"CTU", lat:30.57, lon:104.01 },
+  { code:"CAN", city:"Guangzhou", name:"Guangzhou Baiyun Intl", country:"China", region:"CAN", lat:23.39, lon:113.31 },
+  { code:"PUS", city:"Busan", name:"Gimhae Intl", country:"South Korea", region:"PUS", lat:35.18, lon:128.94 },
+  { code:"CMB", city:"Colombo", name:"Bandaranayake Intl", country:"Sri Lanka", region:"CMB", lat:7.18, lon:80.78 },
+  { code:"DAC", city:"Dhaka", name:"Hazrat Shahjalal Intl", country:"Bangladesh", region:"DAC", lat:23.81, lon:90.33 },
+  { code:"TAS", city:"Tashkent", name:"Tashkent Intl", country:"Uzbekistan", region:"TAS", lat:41.26, lon:69.28 },
+  // Europe (additional)
+  { code:"PRG", city:"Prague", name:"Václav Havel Airport", country:"Czech Republic", region:"PRG", lat:50.10, lon:14.27 },
+  { code:"BUD", city:"Budapest", name:"Ferenc Liszt Intl", country:"Hungary", region:"BUD", lat:47.43, lon:19.26 },
+  { code:"OTP", city:"Bucharest", name:"Henri Coandă Intl", country:"Romania", region:"OTP", lat:44.57, lon:26.10 },
+  { code:"BER", city:"Berlin", name:"Berlin Brandenburg", country:"Germany", region:"BER", lat:52.37, lon:13.50 },
+  { code:"DUS", city:"Düsseldorf", name:"Düsseldorf Intl", country:"Germany", region:"DUS", lat:51.29, lon:6.77 },
+  { code:"HAM", city:"Hamburg", name:"Hamburg Airport", country:"Germany", region:"HAM", lat:53.63, lon:10.01 },
+  { code:"MXP", city:"Milan", name:"Milan Malpensa", country:"Italy", region:"MXP", lat:45.63, lon:8.73 },
+  { code:"NAP", city:"Naples", name:"Naples Intl", country:"Italy", region:"NAP", lat:40.89, lon:14.29 },
+  { code:"VCE", city:"Venice", name:"Marco Polo Airport", country:"Italy", region:"VCE", lat:45.51, lon:12.35 },
+  { code:"ORY", city:"Paris", name:"Paris Orly", country:"France", region:"PAR", lat:48.72, lon:2.38 },
+  { code:"NCE", city:"Nice", name:"Nice Côte d'Azur", country:"France", region:"NCE", lat:43.66, lon:7.22 },
+  { code:"EDI", city:"Edinburgh", name:"Edinburgh Airport", country:"UK", region:"EDI", lat:55.95, lon:-3.37 },
+  { code:"MAN", city:"Manchester", name:"Manchester Airport", country:"UK", region:"MAN", lat:53.36, lon:-2.27 },
+  { code:"LTN", city:"London", name:"London Luton", country:"UK", region:"LTN", lat:51.87, lon:-0.36 },
+  { code:"PMI", city:"Palma", name:"Palma de Mallorca", country:"Spain", region:"PMI", lat:39.55, lon:2.74 },
+  { code:"AGP", city:"Málaga", name:"Málaga-Costa del Sol", country:"Spain", region:"AGP", lat:36.67, lon:-3.75 },
+  { code:"GOT", city:"Gothenburg", name:"Gothenburg Landvetter", country:"Sweden", region:"GOT", lat:57.66, lon:12.28 },
+  { code:"SOF", city:"Sofia", name:"Sofia Airport", country:"Bulgaria", region:"SOF", lat:42.70, lon:23.41 },
+  { code:"ZAG", city:"Zagreb", name:"Zagreb Airport", country:"Croatia", region:"ZAG", lat:45.22, lon:16.07 },
+  { code:"BEG", city:"Belgrade", name:"Nikola Tesla Airport", country:"Serbia", region:"BEG", lat:44.82, lon:20.28 },
+  // Middle East & Africa (additional)
+  { code:"DWC", city:"Dubai", name:"Al Maktoum Intl", country:"UAE", region:"DWC", lat:24.94, lon:55.22 },
+  { code:"BAH", city:"Manama", name:"Bahrain Intl", country:"Bahrain", region:"BAH", lat:26.13, lon:50.36 },
+  { code:"KWI", city:"Kuwait City", name:"Kuwait Intl", country:"Kuwait", region:"KWI", lat:29.24, lon:47.97 },
+  { code:"MCT", city:"Muscat", name:"Muscat Intl", country:"Oman", region:"MCT", lat:23.59, lon:58.28 },
+  { code:"AMM", city:"Amman", name:"Queen Alia Intl", country:"Jordan", region:"AMM", lat:31.75, lon:35.93 },
+  { code:"TLV", city:"Tel Aviv", name:"Ben Gurion Airport", country:"Israel", region:"TLV", lat:31.95, lon:35.34 },
+  { code:"JED", city:"Jeddah", name:"King Abdulaziz Intl", country:"Saudi Arabia", region:"JED", lat:21.67, lon:39.16 },
+  { code:"RUH", city:"Riyadh", name:"King Khalid Intl", country:"Saudi Arabia", region:"RUH", lat:24.96, lon:46.70 },
+  { code:"CAI", city:"Cairo", name:"Cairo Intl", country:"Egypt", region:"CAI", lat:30.12, lon:31.41 },
+  { code:"ADD", city:"Addis Ababa", name:"Bole Intl", country:"Ethiopia", region:"ADD", lat:9.03, lon:38.75 },
+  { code:"NBO", city:"Nairobi", name:"Jomo Kenyatta Intl", country:"Kenya", region:"NBO", lat:-1.32, lon:36.92 },
+  { code:"JNB", city:"Johannesburg", name:"O.R. Tambo Intl", country:"South Africa", region:"JNB", lat:-26.14, lon:28.24 },
+  { code:"LOS", city:"Lagos", name:"Murtala Muhammed Intl", country:"Nigeria", region:"LOS", lat:6.58, lon:3.32 },
+  { code:"CMN", city:"Casablanca", name:"Casablanca-Anfa", country:"Morocco", region:"CMN", lat:33.37, lon:-7.59 },
+  { code:"ACC", city:"Accra", name:"Kotoka Intl", country:"Ghana", region:"ACC", lat:5.61, lon:-0.17 },
+  // Americas (additional)
+  { code:"YYZ", city:"Toronto", name:"Toronto Pearson Intl", country:"Canada", region:"YYZ", lat:43.68, lon:-79.62 },
+  { code:"YVR", city:"Vancouver", name:"Vancouver Intl", country:"Canada", region:"YVR", lat:49.20, lon:-123.18 },
+  { code:"YUL", city:"Montreal", name:"Montréal-Trudeau", country:"Canada", region:"YUL", lat:45.47, lon:-73.74 },
+  { code:"BOG", city:"Bogotá", name:"El Dorado Intl", country:"Colombia", region:"BOG", lat:4.70, lon:-74.15 },
+  { code:"LIM", city:"Lima", name:"Jorge Chávez Intl", country:"Peru", region:"LIM", lat:-12.02, lon:-77.11 },
+  { code:"SCL", city:"Santiago", name:"Santiago Intl", country:"Chile", region:"SCL", lat:-33.40, lon:-70.79 },
+  { code:"GIG", city:"Rio de Janeiro", name:"Tom Jobim Intl", country:"Brazil", region:"GIG", lat:-22.81, lon:-43.16 },
+  { code:"EZE", city:"Buenos Aires", name:"Ministro Pistarini Intl", country:"Argentina", region:"EZE", lat:-34.82, lon:-58.54 },
+  { code:"PTY", city:"Panama City", name:"Tocumén Intl", country:"Panama", region:"PTY", lat:8.98, lon:-79.52 },
+  { code:"SJO", city:"San José", name:"San José Intl", country:"Costa Rica", region:"SJO", lat:10.01, lon:-84.21 },
+  { code:"HAV", city:"Havana", name:"José Martí Intl", country:"Cuba", region:"HAV", lat:22.97, lon:-82.41 },
+  { code:"PUJ", city:"Punta Cana", name:"Punta Cana Intl", country:"Dominican Republic", region:"PUJ", lat:18.57, lon:-68.36 },
+  { code:"MBJ", city:"Montego Bay", name:"Sangster Intl", country:"Jamaica", region:"MBJ", lat:18.50, lon:-77.92 },
+  { code:"MTY", city:"Monterrey", name:"Monterrey Intl", country:"Mexico", region:"MTY", lat:25.69, lon:-100.22 },
+  // US Medium (additional)
+  { code:"MCO", city:"Orlando", name:"Orlando Intl", country:"US", region:"MCO", lat:28.43, lon:-81.31 },
+  { code:"FLL", city:"Fort Lauderdale", name:"Fort Lauderdale-Hollywood Intl", country:"US", region:"FLL", lat:26.07, lon:-80.15 },
+  { code:"TPA", city:"Tampa", name:"Tampa Intl", country:"US", region:"TPA", lat:27.97, lon:-82.53 },
+  { code:"SLC", city:"Salt Lake City", name:"Salt Lake City Intl", country:"US", region:"SLC", lat:40.79, lon:-111.88 },
+  { code:"PDX", city:"Portland", name:"Portland Intl", country:"US", region:"PDX", lat:45.59, lon:-122.60 },
+  { code:"AUS", city:"Austin", name:"Austin-Bergstrom Intl", country:"US", region:"AUS", lat:30.22, lon:-97.84 },
+  { code:"BNA", city:"Nashville", name:"Nashville Intl", country:"US", region:"BNA", lat:36.12, lon:-86.68 },
+  { code:"RDU", city:"Raleigh-Durham", name:"Raleigh-Durham Intl", country:"US", region:"RDU", lat:35.88, lon:-78.79 },
+  { code:"ANC", city:"Anchorage", name:"Ted Stevens Anchorage Intl", country:"US", region:"ANC", lat:61.17, lon:-149.99 },
+  // Oceania (additional)
+  { code:"MEL", city:"Melbourne", name:"Melbourne Airport", country:"Australia", region:"MEL", lat:-37.67, lon:144.84 },
+  { code:"BNE", city:"Brisbane", name:"Brisbane Airport", country:"Australia", region:"BNE", lat:-27.38, lon:153.12 },
+  { code:"PER", city:"Perth", name:"Perth Airport", country:"Australia", region:"PER", lat:-31.95, lon:115.86 },
+  { code:"AKL", city:"Auckland", name:"Auckland Airport", country:"New Zealand", region:"AKL", lat:-37.21, lon:174.79 },
+  { code:"NAN", city:"Nadi", name:"Nadi Intl", country:"Fiji", region:"NAN", lat:-17.75, lon:177.44 },
+  { code:"CHC", city:"Christchurch", name:"Christchurch Intl", country:"New Zealand", region:"CHC", lat:-43.49, lon:172.53 },
+  { code:"WLG", city:"Wellington", name:"Wellington Intl", country:"New Zealand", region:"WLG", lat:-41.33, lon:174.89 },
+  { code:"ZQN", city:"Queenstown", name:"Queenstown Airport", country:"New Zealand", region:"ZQN", lat:-45.02, lon:168.74 },
+  { code:"ADL", city:"Adelaide", name:"Adelaide Airport", country:"Australia", region:"ADL", lat:-34.94, lon:138.53 },
+  { code:"OOL", city:"Gold Coast", name:"Gold Coast Airport", country:"Australia", region:"OOL", lat:-28.16, lon:153.50 },
+  { code:"PPT", city:"Papeete", name:"Faa'a Intl", country:"French Polynesia", region:"PPT", lat:-17.56, lon:-149.61 },
+  // US (additional tier-2)
+  { code:"MSY", city:"New Orleans", name:"Louis Armstrong Intl", country:"US", region:"MSY", lat:29.99, lon:-90.26 },
+  { code:"STL", city:"St. Louis", name:"Lambert Intl", country:"US", region:"STL", lat:38.75, lon:-90.37 },
+  { code:"MDW", city:"Chicago", name:"Midway Intl", country:"US", region:"CHI", lat:41.79, lon:-87.75 },
+  { code:"DAL", city:"Dallas", name:"Love Field", country:"US", region:"DFW", lat:32.85, lon:-96.85 },
+  { code:"HOU", city:"Houston", name:"Hobby Airport", country:"US", region:"IAH", lat:29.65, lon:-95.28 },
+  { code:"OAK", city:"Oakland", name:"Oakland Intl", country:"US", region:"SFO", lat:37.72, lon:-122.22 },
+  { code:"SJC", city:"San Jose", name:"Mineta San Jose Intl", country:"US", region:"SFO", lat:37.36, lon:-121.93 },
+  { code:"SMF", city:"Sacramento", name:"Sacramento Intl", country:"US", region:"SMF", lat:38.70, lon:-121.59 },
+  { code:"OGG", city:"Maui", name:"Kahului Airport", country:"US", region:"HNL", lat:20.90, lon:-156.43 },
+  { code:"KOA", city:"Kona", name:"Kona Intl", country:"US", region:"HNL", lat:19.74, lon:-156.05 },
+  { code:"RSW", city:"Fort Myers", name:"Southwest Florida Intl", country:"US", region:"RSW", lat:26.54, lon:-81.76 },
+  { code:"PBI", city:"West Palm Beach", name:"Palm Beach Intl", country:"US", region:"PBI", lat:26.68, lon:-80.10 },
+  { code:"CVG", city:"Cincinnati", name:"Cincinnati/N. Kentucky Intl", country:"US", region:"CVG", lat:39.05, lon:-84.67 },
+  { code:"CLE", city:"Cleveland", name:"Cleveland Hopkins Intl", country:"US", region:"CLE", lat:41.41, lon:-81.85 },
+  { code:"CMH", city:"Columbus", name:"John Glenn Columbus Intl", country:"US", region:"CMH", lat:40.00, lon:-82.89 },
+  { code:"IND", city:"Indianapolis", name:"Indianapolis Intl", country:"US", region:"IND", lat:39.72, lon:-86.29 },
+  { code:"MKE", city:"Milwaukee", name:"Mitchell Intl", country:"US", region:"MKE", lat:42.95, lon:-87.90 },
+  { code:"PIT", city:"Pittsburgh", name:"Pittsburgh Intl", country:"US", region:"PIT", lat:40.49, lon:-80.23 },
+  { code:"MEM", city:"Memphis", name:"Memphis Intl", country:"US", region:"MEM", lat:35.04, lon:-89.98 },
+  { code:"JAX", city:"Jacksonville", name:"Jacksonville Intl", country:"US", region:"JAX", lat:30.50, lon:-81.69 },
+  { code:"ABQ", city:"Albuquerque", name:"Albuquerque Intl", country:"US", region:"ABQ", lat:35.04, lon:-106.61 },
+  { code:"BOI", city:"Boise", name:"Boise Airport", country:"US", region:"BOI", lat:43.56, lon:-116.22 },
+  { code:"ONT", city:"Ontario", name:"Ontario Intl", country:"US", region:"LAX", lat:34.06, lon:-117.60 },
+  { code:"BUR", city:"Burbank", name:"Hollywood Burbank Airport", country:"US", region:"LAX", lat:34.20, lon:-118.36 },
+  { code:"SNA", city:"Santa Ana", name:"John Wayne Airport", country:"US", region:"LAX", lat:33.68, lon:-117.87 },
+  { code:"SAT", city:"San Antonio", name:"San Antonio Intl", country:"US", region:"SAT", lat:29.53, lon:-98.47 },
+  // Europe (additional)
+  { code:"BGO", city:"Bergen", name:"Bergen Flesland", country:"Norway", region:"BGO", lat:60.29, lon:5.22 },
+  { code:"KEF", city:"Reykjavik", name:"Keflavik Intl", country:"Iceland", region:"KEF", lat:63.99, lon:-22.62 },
+  { code:"LYS", city:"Lyon", name:"Lyon-Saint Exupéry", country:"France", region:"LYS", lat:45.73, lon:5.08 },
+  { code:"MRS", city:"Marseille", name:"Marseille Provence", country:"France", region:"MRS", lat:43.44, lon:5.21 },
+  { code:"TLS", city:"Toulouse", name:"Toulouse-Blagnac", country:"France", region:"TLS", lat:43.63, lon:1.37 },
+  { code:"BGY", city:"Milan", name:"Milan Bergamo", country:"Italy", region:"MXP", lat:45.67, lon:9.70 },
+  { code:"CTA", city:"Catania", name:"Catania-Fontanarossa", country:"Italy", region:"CTA", lat:37.47, lon:15.07 },
+  { code:"PMO", city:"Palermo", name:"Palermo Falcone-Borsellino", country:"Italy", region:"PMO", lat:38.18, lon:13.10 },
+  { code:"SPU", city:"Split", name:"Split Airport", country:"Croatia", region:"SPU", lat:43.54, lon:16.30 },
+  { code:"DBV", city:"Dubrovnik", name:"Dubrovnik Airport", country:"Croatia", region:"DBV", lat:42.56, lon:18.27 },
+  { code:"RIX", city:"Riga", name:"Riga Intl", country:"Latvia", region:"RIX", lat:56.92, lon:23.97 },
+  { code:"VNO", city:"Vilnius", name:"Vilnius Intl", country:"Lithuania", region:"VNO", lat:54.63, lon:25.29 },
+  { code:"TLL", city:"Tallinn", name:"Tallinn Airport", country:"Estonia", region:"TLL", lat:59.41, lon:24.83 },
+  { code:"GLA", city:"Glasgow", name:"Glasgow Airport", country:"UK", region:"GLA", lat:55.87, lon:-4.43 },
+  { code:"BFS", city:"Belfast", name:"Belfast Intl", country:"UK", region:"BFS", lat:54.66, lon:-6.22 },
+  { code:"SAW", city:"Istanbul", name:"Sabiha Gökçen", country:"Turkey", region:"IST", lat:40.90, lon:29.31 },
+  { code:"AYT", city:"Antalya", name:"Antalya Airport", country:"Turkey", region:"AYT", lat:36.90, lon:30.80 },
+  { code:"GDN", city:"Gdańsk", name:"Lech Wałęsa Airport", country:"Poland", region:"GDN", lat:54.38, lon:18.47 },
+  { code:"WRO", city:"Wrocław", name:"Copernicus Airport", country:"Poland", region:"WRO", lat:51.10, lon:16.89 },
+  { code:"SZG", city:"Salzburg", name:"Salzburg Airport", country:"Austria", region:"SZG", lat:47.79, lon:13.00 },
+  { code:"TFS", city:"Tenerife", name:"Tenerife South", country:"Spain", region:"TFS", lat:28.04, lon:-16.57 },
+  { code:"SVQ", city:"Seville", name:"Seville Airport", country:"Spain", region:"SVQ", lat:37.42, lon:-5.90 },
+  { code:"OPO", city:"Porto", name:"Francisco Sá Carneiro", country:"Portugal", region:"OPO", lat:41.24, lon:-8.68 },
+  { code:"BSL", city:"Basel", name:"EuroAirport Basel-Mulhouse", country:"Switzerland", region:"BSL", lat:47.60, lon:7.53 },
+  { code:"SKG", city:"Thessaloniki", name:"Thessaloniki Airport", country:"Greece", region:"SKG", lat:40.52, lon:22.97 },
+  { code:"JTR", city:"Santorini", name:"Santorini Airport", country:"Greece", region:"JTR", lat:36.40, lon:25.48 },
+  { code:"CFU", city:"Corfu", name:"Ioannis Kapodistrias Intl", country:"Greece", region:"CFU", lat:39.60, lon:19.91 },
+  { code:"HER", city:"Heraklion", name:"Heraklion Airport", country:"Greece", region:"HER", lat:35.34, lon:25.18 },
+  // Asia (additional)
+  { code:"SHA", city:"Shanghai", name:"Shanghai Hongqiao", country:"China", region:"PVG", lat:31.20, lon:121.34 },
+  { code:"SZX", city:"Shenzhen", name:"Shenzhen Bao'an Intl", country:"China", region:"SZX", lat:22.64, lon:113.81 },
+  { code:"HGH", city:"Hangzhou", name:"Hangzhou Xiaoshan Intl", country:"China", region:"HGH", lat:30.23, lon:120.43 },
+  { code:"WUH", city:"Wuhan", name:"Wuhan Tianhe Intl", country:"China", region:"WUH", lat:30.78, lon:114.21 },
+  { code:"CKG", city:"Chongqing", name:"Chongqing Jiangbei Intl", country:"China", region:"CKG", lat:29.72, lon:106.64 },
+  { code:"XIY", city:"Xi'an", name:"Xi'an Xianyang Intl", country:"China", region:"XIY", lat:34.45, lon:108.75 },
+  { code:"NKG", city:"Nanjing", name:"Nanjing Lukou Intl", country:"China", region:"NKG", lat:31.74, lon:118.86 },
+  { code:"FUK", city:"Fukuoka", name:"Fukuoka Airport", country:"Japan", region:"FUK", lat:33.59, lon:130.45 },
+  { code:"CTS", city:"Sapporo", name:"New Chitose Airport", country:"Japan", region:"CTS", lat:42.78, lon:141.69 },
+  { code:"HYD", city:"Hyderabad", name:"Rajiv Gandhi Intl", country:"India", region:"HYD", lat:17.24, lon:78.43 },
+  { code:"MAA", city:"Chennai", name:"Chennai Intl", country:"India", region:"MAA", lat:12.99, lon:80.17 },
+  { code:"COK", city:"Kochi", name:"Cochin Intl", country:"India", region:"COK", lat:10.15, lon:76.40 },
+  { code:"CEB", city:"Cebu", name:"Mactan-Cebu Intl", country:"Philippines", region:"CEB", lat:10.31, lon:123.99 },
+  { code:"DAD", city:"Da Nang", name:"Da Nang Intl", country:"Vietnam", region:"DAD", lat:16.04, lon:108.20 },
+  { code:"CNX", city:"Chiang Mai", name:"Chiang Mai Intl", country:"Thailand", region:"CNX", lat:18.77, lon:98.96 },
+  { code:"HKT", city:"Phuket", name:"Phuket Intl", country:"Thailand", region:"HKT", lat:8.11, lon:98.32 },
+  { code:"PNH", city:"Phnom Penh", name:"Phnom Penh Intl", country:"Cambodia", region:"PNH", lat:11.55, lon:104.84 },
+  { code:"REP", city:"Siem Reap", name:"Siem Reap Intl", country:"Cambodia", region:"REP", lat:13.41, lon:103.81 },
+  { code:"RGN", city:"Yangon", name:"Yangon Intl", country:"Myanmar", region:"RGN", lat:16.91, lon:96.13 },
+  { code:"KTM", city:"Kathmandu", name:"Tribhuvan Intl", country:"Nepal", region:"KTM", lat:27.70, lon:85.36 },
+  { code:"ISB", city:"Islamabad", name:"Islamabad Intl", country:"Pakistan", region:"ISB", lat:33.62, lon:72.83 },
+  { code:"KHI", city:"Karachi", name:"Jinnah Intl", country:"Pakistan", region:"KHI", lat:24.91, lon:67.16 },
+  { code:"LHE", city:"Lahore", name:"Allama Iqbal Intl", country:"Pakistan", region:"LHE", lat:31.52, lon:74.40 },
+  { code:"PEN", city:"Penang", name:"Penang Intl", country:"Malaysia", region:"PEN", lat:5.30, lon:100.26 },
+  { code:"SUB", city:"Surabaya", name:"Juanda Intl", country:"Indonesia", region:"SUB", lat:-7.38, lon:112.79 },
+  // Middle East (additional)
+  { code:"BEY", city:"Beirut", name:"Rafic Hariri Intl", country:"Lebanon", region:"BEY", lat:33.82, lon:35.49 },
+  { code:"DMM", city:"Dammam", name:"King Fahd Intl", country:"Saudi Arabia", region:"DMM", lat:26.47, lon:49.80 },
+  { code:"MED", city:"Medina", name:"Prince Mohammad Intl", country:"Saudi Arabia", region:"MED", lat:24.55, lon:39.70 },
+  // Africa (additional)
+  { code:"ABV", city:"Abuja", name:"Nnamdi Azikiwe Intl", country:"Nigeria", region:"ABV", lat:9.01, lon:7.26 },
+  { code:"DAR", city:"Dar es Salaam", name:"Julius Nyerere Intl", country:"Tanzania", region:"DAR", lat:-6.88, lon:39.20 },
+  { code:"JRO", city:"Kilimanjaro", name:"Kilimanjaro Intl", country:"Tanzania", region:"JRO", lat:-3.43, lon:37.07 },
+  { code:"DSS", city:"Dakar", name:"Blaise Diagne Intl", country:"Senegal", region:"DSS", lat:14.67, lon:-17.07 },
+  { code:"MRU", city:"Mauritius", name:"SSR Intl Airport", country:"Mauritius", region:"MRU", lat:-20.43, lon:57.68 },
+  { code:"TUN", city:"Tunis", name:"Tunis-Carthage", country:"Tunisia", region:"TUN", lat:36.85, lon:10.23 },
+  { code:"ALG", city:"Algiers", name:"Houari Boumediene", country:"Algeria", region:"ALG", lat:36.69, lon:3.22 },
+  { code:"DUR", city:"Durban", name:"King Shaka Intl", country:"South Africa", region:"DUR", lat:-29.61, lon:31.12 },
+  { code:"FIH", city:"Kinshasa", name:"N'djili Intl", country:"DR Congo", region:"FIH", lat:-4.39, lon:15.44 },
+  // Americas (additional)
+  { code:"YYC", city:"Calgary", name:"Calgary Intl", country:"Canada", region:"YYC", lat:51.11, lon:-114.02 },
+  { code:"YEG", city:"Edmonton", name:"Edmonton Intl", country:"Canada", region:"YEG", lat:53.31, lon:-113.58 },
+  { code:"YHZ", city:"Halifax", name:"Halifax Stanfield Intl", country:"Canada", region:"YHZ", lat:44.88, lon:-63.51 },
+  { code:"YOW", city:"Ottawa", name:"Ottawa Macdonald-Cartier Intl", country:"Canada", region:"YOW", lat:45.32, lon:-75.67 },
+  { code:"SJU", city:"San Juan", name:"Luis Muñoz Marín Intl", country:"Puerto Rico", region:"SJU", lat:18.44, lon:-66.00 },
+  { code:"NAS", city:"Nassau", name:"Lynden Pindling Intl", country:"Bahamas", region:"NAS", lat:25.04, lon:-77.47 },
+  { code:"AUA", city:"Oranjestad", name:"Queen Beatrix Intl", country:"Aruba", region:"AUA", lat:12.50, lon:-70.01 },
+  { code:"SXM", city:"Philipsburg", name:"Princess Juliana Intl", country:"Sint Maarten", region:"SXM", lat:18.04, lon:-63.11 },
+  { code:"GCM", city:"Grand Cayman", name:"Owen Roberts Intl", country:"Cayman Islands", region:"GCM", lat:19.29, lon:-81.36 },
+  { code:"PVR", city:"Puerto Vallarta", name:"Gustavo Díaz Ordaz Intl", country:"Mexico", region:"PVR", lat:20.68, lon:-105.25 },
+  { code:"SJD", city:"Los Cabos", name:"Los Cabos Intl", country:"Mexico", region:"SJD", lat:23.15, lon:-109.72 },
+  { code:"GDL", city:"Guadalajara", name:"Miguel Hidalgo y Costilla Intl", country:"Mexico", region:"GDL", lat:20.52, lon:-103.31 },
+  { code:"GUA", city:"Guatemala City", name:"La Aurora Intl", country:"Guatemala", region:"GUA", lat:14.58, lon:-90.53 },
+  { code:"SAL", city:"San Salvador", name:"Óscar Arnulfo Romero Intl", country:"El Salvador", region:"SAL", lat:13.44, lon:-89.06 },
+  { code:"MDE", city:"Medellín", name:"José María Córdova Intl", country:"Colombia", region:"MDE", lat:6.16, lon:-75.43 },
+  { code:"UIO", city:"Quito", name:"Mariscal Sucre Intl", country:"Ecuador", region:"UIO", lat:-0.13, lon:-78.49 },
+  { code:"CCS", city:"Caracas", name:"Simón Bolívar Intl", country:"Venezuela", region:"CCS", lat:10.60, lon:-66.99 },
+  { code:"MVD", city:"Montevideo", name:"Carrasco Intl", country:"Uruguay", region:"MVD", lat:-34.84, lon:-56.03 },
+  { code:"CUZ", city:"Cusco", name:"Alejandro Velasco Astete Intl", country:"Peru", region:"CUZ", lat:-13.54, lon:-71.94 },
+  { code:"BSB", city:"Brasília", name:"Brasília Intl", country:"Brazil", region:"BSB", lat:-15.87, lon:-47.92 },
+  { code:"REC", city:"Recife", name:"Guararapes Intl", country:"Brazil", region:"REC", lat:-8.13, lon:-34.92 },
+  { code:"SSA", city:"Salvador", name:"Deputado Luís Eduardo Magalhães Intl", country:"Brazil", region:"SSA", lat:-12.91, lon:-38.33 },
+  { code:"FOR", city:"Fortaleza", name:"Pinto Martins Intl", country:"Brazil", region:"FOR", lat:-3.78, lon:-38.53 },
+  { code:"LPB", city:"La Paz", name:"El Alto Intl", country:"Bolivia", region:"LPB", lat:-16.51, lon:-68.19 },
+  { code:"ASU", city:"Asunción", name:"Silvio Pettirossi Intl", country:"Paraguay", region:"ASU", lat:-25.24, lon:-57.52 },
+];
+
+const TRANSFER_PARTNERS = [
+  { name:"Chase UR", color:"#0c4a6e", short:"Chase" },
+  { name:"Amex MR", color:"#006FCF", short:"Amex" },
+  { name:"Citi TYP", color:"#003B70", short:"Citi" },
+  { name:"Capital One", color:"#D03027", short:"CapOne" },
+  { name:"Bilt", color:"#1a1a1a", short:"Bilt" },
+];
+
+const SWEET_SPOTS = [
+  { id:1, route:"US → Europe", program:"Miles&Smiles", airline:"TK", miles:45000, cabin:"Business", alliance:"Star Alliance", desc:"Turkish Miles&Smiles charges just 45K miles for Star Alliance business class to Europe — one of the lowest redemption rates available.", transfers:["Citi TYP","Capital One","Bilt"], query:"Business class from NYC to Istanbul on Turkish Miles&Smiles", savings:"Save ~$3,500 vs cash" },
+  { id:2, route:"US → Japan", program:"Flying Club", airline:"VS", miles:60000, cabin:"First", alliance:"Star Alliance", desc:"Virgin Atlantic lets you book ANA First Class for 60K miles — the cheapest way into the world's best first class cabin.", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], query:"First class from NYC to Tokyo on ANA using Virgin Atlantic miles", savings:"Save ~$12,000 vs cash" },
+  { id:3, route:"US → Asia", program:"Aeroplan", airline:"AC", miles:75000, cabin:"Business", alliance:"Star Alliance", desc:"Aeroplan offers business class to Asia with flexible stopovers. Add a free stopover in Europe on the way.", transfers:["Chase UR","Amex MR","Capital One","Bilt"], query:"Business class from NYC to Asia on Aeroplan", savings:"Save ~$4,200 vs cash" },
+  { id:4, route:"US → Europe", program:"Avios", airline:"BA", miles:13000, cabin:"Economy", alliance:"oneworld", desc:"British Airways Avios offers off-peak short-haul economy from 13K miles — great for quick European hops.", transfers:["Chase UR","Amex MR","Capital One"], query:"Economy flights from NYC to London using Avios", savings:"Save ~$400 vs cash" },
+  { id:5, route:"US → Middle East", program:"AAdvantage", airline:"AA", miles:70000, cabin:"Business", alliance:"oneworld", desc:"Book Qatar Qsuites (the world's best business class) using AAdvantage miles for 70K — exceptional value.", transfers:["Citi TYP","Bilt"], query:"Business class from NYC to Doha on Qatar Qsuites using AAdvantage miles", savings:"Save ~$5,800 vs cash" },
+  { id:6, route:"US → South America", program:"Flying Blue", airline:"AF", miles:53000, cabin:"Business", alliance:"SkyTeam", desc:"Flying Blue promo awards offer business class to South America from 53K — watch for monthly deals.", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], query:"Business class from Miami to São Paulo using Flying Blue miles", savings:"Save ~$2,900 vs cash" },
+  { id:7, route:"US → Hawaii", program:"Flying Club", airline:"VS", miles:15000, cabin:"Economy", alliance:"SkyTeam", desc:"Virgin Atlantic lets you book Delta economy to Hawaii for just 15K miles round trip — a steal.", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], query:"Economy flights from LAX to Honolulu using Virgin Atlantic miles", savings:"Save ~$450 vs cash" },
+  { id:8, route:"US → Australia", program:"Frequent Flyer", airline:"QF", miles:72000, cabin:"Business", alliance:"oneworld", desc:"Qantas classic reward seats offer business class to Australia for 72K miles — book early for availability.", transfers:[], query:"Business class from LAX to Sydney on Qantas", savings:"Save ~$5,100 vs cash" },
+];
+
+const DEVALUATIONS = [
+  { program:"Flying Blue", airline:"AF", date:"January 2026", desc:"Business class awards to Europe increased ~20%. Economy also saw 10-15% increases on popular transatlantic routes.", severity:"HIGH", color:"#e5384f" },
+  { program:"MileagePlus", airline:"UA", date:"December 2025", desc:"United eliminated the Excursionist Perk for new bookings and moved to fully dynamic upgrade pricing.", severity:"HIGH", color:"#e5384f" },
+  { program:"SkyMiles", airline:"DL", date:"Ongoing", desc:"Delta operates fully dynamic pricing with no published award chart. Prices fluctuate wildly based on demand.", severity:"HIGH", color:"#e5384f" },
+  { program:"Hilton Honors", airline:null, date:"2025", desc:"Top-tier properties jumped from 120K to 250K+ points per night. Standard room redemptions up 30-50%.", severity:"MODERATE", color:"#f5a623" },
+  { program:"Flying Club", airline:"VS", date:"2025", desc:"Surcharges on European redemptions increased significantly. Fuel surcharges on BA metal now rival cash fares.", severity:"MODERATE", color:"#f5a623" },
+  { program:"AAdvantage", airline:"AA", date:"2025", desc:'Web specials removed. Partner charts show "starting at" pricing — effectively dynamic pricing.', severity:"MODERATE", color:"#f5a623" },
+];
+
+const ALLIANCE_COLORS = { "Star Alliance":"#cfb53b", "oneworld":"#e5384f", "SkyTeam":"#003A70", "Independent":"#888" };
+const AIRCRAFT = ["Boeing 777-300ER","Boeing 787-9 Dreamliner","Airbus A350-900","Airbus A380-800","Boeing 777-200LR","Airbus A330-900neo","Boeing 787-10","Airbus A350-1000"];
+const FARE_CLASSES = { Economy:["Y","B","M","H","Q","V","W"], "Premium Economy":["W","P","E","N"], Business:["J","C","D","Z","I"], First:["F","A","P"] };
+
+const EXAMPLE_QUERIES = [
+  { text:"Cheapest business class out of NYC on Star Alliance miles", icon:"⭐" },
+  { text:"JFK to Lisbon in business class in April 2026", icon:"🇵🇹" },
+  { text:"Best first class to Tokyo using Amex MR points", icon:"🇯🇵" },
+  { text:"NYC to Doha on Qatar Qsuites using AAdvantage miles", icon:"✈️" },
+  { text:"Cheap economy flights from SFO to Europe", icon:"🌍" },
+  { text:"Business class from LAX to Singapore on any alliance", icon:"🇸🇬" },
+  { text:"First class from Miami to London under 80,000 miles", icon:"🇬🇧" },
+  { text:"Best oneworld business class from Chicago to Asia", icon:"🌏" },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS & FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+
+const rand = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const apByCode = c => AIRPORTS.find(a=>a.code===c);
+const alByCode = c => AIRLINES.find(a=>a.code===c);
+
+function distMi(a,b) {
+  const ap1 = apByCode(a), ap2 = apByCode(b);
+  if (!ap1||!ap2) return 4000;
+  const R=3959, toR=Math.PI/180;
+  const dLat=(ap2.lat-ap1.lat)*toR, dLon=(ap2.lon-ap1.lon)*toR;
+  const x = Math.sin(dLat/2)**2 + Math.cos(ap1.lat*toR)*Math.cos(ap2.lat*toR)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+
+function cpmRating(cpm) {
+  if (cpm>=2.0) return {label:"Excellent",color:"#00b4a0",bg:"#e6faf7",emoji:"🔥"};
+  if (cpm>=1.5) return {label:"Good",color:"#3b9e3b",bg:"#eaf5ea",emoji:"👍"};
+  if (cpm>=1.0) return {label:"Fair",color:"#f5a623",bg:"#fef6e6",emoji:"⚖️"};
+  return {label:"Pay Cash",color:"#e5384f",bg:"#fdeaed",emoji:"💵"};
+}
+
+function aiRec(cpm) {
+  if (cpm>=2.0) return "Outstanding redemption — you're getting exceptional value. Book immediately before this availability disappears.";
+  if (cpm>=1.5) return "Solid value — this is a good use of your miles, especially for a premium cabin. Recommended: redeem.";
+  if (cpm>=1.0) return "Marginal value — consider whether your miles could unlock better value on a different route or date.";
+  return "Pay cash and save your miles for a higher-value redemption. Your points are worth more elsewhere.";
+}
+
+// Determine what region an airport belongs to
+function airportRegion(code) {
+  const a = apByCode(code);
+  if (!a) return 0;
+  const c = a.country;
+  if (c==="US") return US;
+  if (["Canada"].includes(c)) return US; // treat Canada as reachable from US carriers
+  if (["UK","France","Germany","Netherlands","Italy","Spain","Portugal","Turkey","Greece","Switzerland",
+       "Belgium","Austria","Ireland","Poland","Sweden","Denmark","Norway","Finland","Czech Republic",
+       "Hungary","Romania","Bulgaria","Croatia","Serbia","Iceland","Latvia","Lithuania","Estonia",
+       "Luxembourg"].includes(c)) return EU;
+  if (["Japan","China","Taiwan","South Korea","Singapore","Thailand","Malaysia","Indonesia","Philippines",
+       "Vietnam","Cambodia","Myanmar","India","Nepal","Pakistan","Sri Lanka","Bangladesh","Uzbekistan",
+       "Mongolia","Hong Kong"].includes(c)) return AS;
+  if (["UAE","Qatar","Saudi Arabia","Bahrain","Kuwait","Oman","Jordan","Israel","Lebanon","Iraq"].includes(c)) return ME;
+  if (["South Africa","Kenya","Ethiopia","Nigeria","Ghana","Morocco","Tanzania","Senegal","Mauritius",
+       "Egypt","Tunisia","Algeria","DR Congo"].includes(c)) return AF;
+  if (["Brazil","Argentina","Chile","Colombia","Peru","Ecuador","Venezuela","Uruguay","Bolivia","Paraguay"].includes(c)) return SA;
+  if (["Mexico","Panama","Costa Rica","Guatemala","El Salvador","Cuba","Dominican Republic","Jamaica",
+       "Bahamas","Aruba","Sint Maarten","Cayman Islands","Puerto Rico"].includes(c)) return CA;
+  if (["Australia","New Zealand","Fiji","French Polynesia"].includes(c)) return OC;
+  return 0;
+}
+
+// Check if an airline can plausibly fly a route between two airports
+function canFlyRoute(al, origCode, destCode) {
+  const oReg = airportRegion(origCode);
+  const dReg = airportRegion(destCode);
+  if (!oReg || !dReg) return false;
+
+  // Same region = domestic route
+  if (oReg === dReg) {
+    if (oReg === US && (al.routes & DOM_US)) return true;
+    if (oReg === EU && (al.routes & DOM_EU)) return true;
+    if (oReg === AS && (al.routes & DOM_AS)) return true;
+    // For other same-region, check if airline serves both regions
+    return (al.routes & oReg) > 0;
+  }
+
+  // Cross-region: airline must serve BOTH the origin region AND destination region
+  return (al.routes & oReg) > 0 && (al.routes & dReg) > 0;
+}
+
+function generateFlights(parsed) {
+  const origins = parsed.origins||["JFK"];
+  const dests = parsed.destinations||["LHR"];
+  const cabin = parsed.cabin||"Business";
+  const alliance = parsed.alliance||"any";
+  const maxMiles = parsed.maxMiles||null;
+  const includeBudget = parsed.includeBudget!==false;
+  // Date window from parser
+  const dw = parsed.dateWindow || {};
+  const dateStart = dw.start || new Date(Date.now()+7*864e5);
+  const dateEnd = dw.end || new Date(Date.now()+90*864e5);
+  const dateSpanMs = Math.max(dateEnd.getTime()-dateStart.getTime(), 864e5); // at least 1 day
+
+  let airlines = AIRLINES.filter(a => {
+    if (alliance==="any") return true;
+    return a.alliance.toLowerCase()===alliance.toLowerCase();
+  });
+  if (!includeBudget) airlines = airlines.filter(a => a.type!=="budget");
+  if (parsed.program) {
+    const p = parsed.program.toLowerCase();
+    const m = AIRLINES.find(a => a.program&&a.program.toLowerCase().includes(p)||a.name.toLowerCase().includes(p));
+    if (m) airlines = [m, ...airlines.filter(a=>a.code!==m.code)];
+  }
+  if (!airlines.length) airlines = AIRLINES.filter(a=>a.type==="full-service");
+
+  const mR = {Economy:[8000,40000],"Premium Economy":[20000,65000],Business:[30000,120000],First:[50000,180000]};
+  const cR = {Economy:[300,1200],"Premium Economy":[600,2400],Business:[1800,8000],First:[4000,15000]};
+  const [mLo,mHi] = mR[cabin]||mR.Business;
+  const [cLo,cHi] = cR[cabin]||cR.Business;
+
+  const results = [];
+  const target = rand(10,16);
+  let att = 0;
+  while (results.length < target && att < target*8) {
+    att++;
+    const al = airlines[att % airlines.length];
+    const orig = pick(origins);
+    const dest = pick(dests);
+    if (orig===dest) continue;
+
+    // CORE FIX: Check if this airline realistically flies this route
+    if (!canFlyRoute(al, orig, dest)) continue;
+
+    const dist = distMi(orig,dest);
+    // Budget airlines: economy only, shorter routes only
+    if (al.type==="budget") {
+      if (cabin!=="Economy") continue;
+      if (dist > 3500) continue;
+    }
+
+    const miles = al.type==="budget" ? null : Math.round(rand(mLo,mHi)/500)*500;
+    if (maxMiles && miles && miles > maxMiles) continue;
+    const fees = al.type==="budget" ? 0 : rand(22,186);
+    const cash = al.type==="budget" ? rand(Math.max(80,Math.round(dist*0.06)), Math.round(dist*0.18)) : rand(cLo,cHi);
+    const cpm = miles ? +((cash-fees)/miles*100).toFixed(1) : null;
+    if (cpm && cpm < 0.3) continue;
+    const stops = dist<1500?rand(0,1):dist<4000?rand(0,2):rand(0,2);
+    const hrs = dist/480 + stops*2.2;
+    const depH = rand(6,22), depM = pick([0,10,15,20,25,30,35,40,45,50,55]);
+    const arrH = (depH+Math.floor(hrs))%24;
+    const arrM = Math.round((hrs%1)*60)%60;
+    const nextDay = depH+hrs>=24;
+    const seats = rand(1,9);
+    const fc = FARE_CLASSES[cabin]||FARE_CLASSES.Business;
+    const hasDeval = DEVALUATIONS.some(d=>d.airline===al.code);
+
+    // Generate a departure date within the parsed date window
+    const depDate = new Date(dateStart.getTime() + Math.random()*dateSpanMs);
+    const arrDate = new Date(depDate.getTime() + Math.round(hrs*3600000));
+    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    const depDateStr = `${DAYS[depDate.getDay()]}, ${MONTHS[depDate.getMonth()]} ${depDate.getDate()}`;
+    const arrDateStr = depDate.toDateString()===arrDate.toDateString() ? null : `${DAYS[arrDate.getDay()]}, ${MONTHS[arrDate.getMonth()]} ${arrDate.getDate()}`;
+
+    results.push({
+      id:`fl-${results.length}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
+      airline:al, origin:orig, destination:dest, cabin, miles, fees, cash, cpm, stops,
+      duration:`${Math.floor(hrs)}h ${Math.round((hrs%1)*60)}m`,
+      durationMin:Math.round(hrs*60),
+      depTime:`${String(depH).padStart(2,"0")}:${String(depM).padStart(2,"0")}`,
+      arrTime:`${String(arrH).padStart(2,"0")}:${String(arrM).padStart(2,"0")}${nextDay?" +1":""}`,
+      depDate: depDateStr, arrDate: arrDateStr, depDateObj: depDate,
+      aircraft:pick(AIRCRAFT), fareClass:pick(fc), seats,
+      nonstop:stops===0, hasDevaluation:hasDeval,
+      devaluation:hasDeval?DEVALUATIONS.find(d=>d.airline===al.code):null,
+    });
+  }
+  // Sort by date, then by value (CPM) within same date
+  results.sort((a,b) => {
+    const da = a.depDateObj ? a.depDateObj.getTime() : 0;
+    const db = b.depDateObj ? b.depDateObj.getTime() : 0;
+    if (da !== db) return da - db;
+    return (b.cpm||0) - (a.cpm||0);
+  });
+  return results;
+}
+
+// City/region → airport code mappings for smart fallback parsing
+const CITY_MAP = {
+  // US Origins
+  "nyc":["JFK","EWR","LGA"],"new york":["JFK","EWR","LGA"],"newark":["EWR"],"lax":["LAX"],"los angeles":["LAX"],"sfo":["SFO"],"san francisco":["SFO"],"bay area":["SFO","OAK","SJC"],"ord":["ORD"],"chicago":["ORD","MDW"],"mia":["MIA"],"miami":["MIA"],"bos":["BOS"],"boston":["BOS"],"atl":["ATL"],"atlanta":["ATL"],"sea":["SEA"],"seattle":["SEA"],"dfw":["DFW"],"dallas":["DFW","DAL"],"iad":["IAD"],"dca":["DCA"],"dc":["IAD","DCA"],"washington":["IAD","DCA"],"iah":["IAH"],"houston":["IAH","HOU"],"den":["DEN"],"denver":["DEN"],"phx":["PHX"],"phoenix":["PHX"],"hnl":["HNL"],"honolulu":["HNL"],"hawaii":["HNL","OGG","KOA"],"las":["LAS"],"vegas":["LAS"],"msp":["MSP"],"minneapolis":["MSP"],"dtw":["DTW"],"detroit":["DTW"],"clt":["CLT"],"charlotte":["CLT"],"phl":["PHL"],"philadelphia":["PHL"],"msy":["MSY"],"new orleans":["MSY"],"stl":["STL"],"st louis":["STL"],"mco":["MCO"],"orlando":["MCO"],"fll":["FLL"],"fort lauderdale":["FLL"],"tpa":["TPA"],"tampa":["TPA"],"slc":["SLC"],"salt lake":["SLC"],"pdx":["PDX"],"portland":["PDX"],"aus":["AUS"],"austin":["AUS"],"bna":["BNA"],"nashville":["BNA"],"rdu":["RDU"],"raleigh":["RDU"],"pit":["PIT"],"pittsburgh":["PIT"],"san diego":["SAN"],"san antonio":["SAT"],
+  // Europe
+  "london":["LHR","LGW"],"lhr":["LHR"],"paris":["CDG","ORY"],"cdg":["CDG"],"frankfurt":["FRA"],"amsterdam":["AMS"],"rome":["FCO"],"barcelona":["BCN"],"lisbon":["LIS"],"istanbul":["IST","SAW"],"athens":["ATH"],"zurich":["ZRH"],"geneva":["GVA"],"madrid":["MAD"],"munich":["MUC"],"brussels":["BRU"],"vienna":["VIE"],"dublin":["DUB"],"warsaw":["WAW"],"krakow":["KRK"],"stockholm":["ARN"],"copenhagen":["CPH"],"oslo":["OSL"],"helsinki":["HEL"],"prague":["PRG"],"budapest":["BUD"],"bucharest":["OTP"],"berlin":["BER"],"milan":["MXP","BGY"],"naples":["NAP"],"venice":["VCE"],"nice":["NCE"],"edinburgh":["EDI"],"manchester":["MAN"],"bergen":["BGO"],"reykjavik":["KEF"],"iceland":["KEF"],"lyon":["LYS"],"marseille":["MRS"],"split":["SPU"],"dubrovnik":["DBV"],"riga":["RIX"],"vilnius":["VNO"],"tallinn":["TLL"],"glasgow":["GLA"],"antalya":["AYT"],"salzburg":["SZG"],"tenerife":["TFS"],"seville":["SVQ"],"porto":["OPO"],"thessaloniki":["SKG"],"santorini":["JTR"],"corfu":["CFU"],"crete":["HER"],"heraklion":["HER"],"palma":["PMI"],"mallorca":["PMI"],"malaga":["AGP"],"sicily":["CTA","PMO"],"catania":["CTA"],"palermo":["PMO"],"sofia":["SOF"],"zagreb":["ZAG"],"belgrade":["BEG"],"gdansk":["GDN"],"wroclaw":["WRO"],"europe":["LHR","CDG","FRA","AMS","FCO","BCN","LIS","MAD","MUC","VIE","PRG","BER","DUB"],
+  // Asia
+  "tokyo":["NRT","HND"],"japan":["NRT","HND","KIX"],"osaka":["KIX"],"fukuoka":["FUK"],"sapporo":["CTS"],"singapore":["SIN"],"hong kong":["HKG"],"seoul":["ICN"],"korea":["ICN"],"bangkok":["BKK"],"thailand":["BKK","CNX","HKT"],"phuket":["HKT"],"chiang mai":["CNX"],"dubai":["DXB"],"doha":["DOH"],"qatar":["DOH"],"sydney":["SYD"],"australia":["SYD","MEL","BNE"],"melbourne":["MEL"],"brisbane":["BNE"],"perth":["PER"],"delhi":["DEL"],"india":["DEL","BOM","BLR"],"mumbai":["BOM"],"bangalore":["BLR"],"hyderabad":["HYD"],"chennai":["MAA"],"kochi":["COK"],"taipei":["TPE"],"taiwan":["TPE"],"shanghai":["PVG","SHA"],"beijing":["PEK"],"china":["PVG","PEK","CAN"],"guangzhou":["CAN"],"shenzhen":["SZX"],"hangzhou":["HGH"],"kuala lumpur":["KUL"],"malaysia":["KUL","PEN"],"jakarta":["CGK"],"bali":["DPS"],"indonesia":["CGK","DPS"],"manila":["MNL"],"philippines":["MNL","CEB"],"cebu":["CEB"],"ho chi minh":["SGN"],"saigon":["SGN"],"hanoi":["HAN"],"vietnam":["SGN","HAN","DAD"],"da nang":["DAD"],"cambodia":["PNH","REP"],"phnom penh":["PNH"],"siem reap":["REP"],"yangon":["RGN"],"myanmar":["RGN"],"nepal":["KTM"],"kathmandu":["KTM"],"pakistan":["ISB","KHI","LHE"],"islamabad":["ISB"],"karachi":["KHI"],"lahore":["LHE"],"colombo":["CMB"],"sri lanka":["CMB"],"asia":["NRT","HND","SIN","HKG","ICN","BKK","DEL","TPE","KUL"],
+  // Middle East
+  "abu dhabi":["AUH"],"bahrain":["BAH"],"kuwait":["KWI"],"muscat":["MCT"],"oman":["MCT"],"amman":["AMM"],"jordan":["AMM"],"tel aviv":["TLV"],"israel":["TLV"],"jeddah":["JED"],"riyadh":["RUH"],"saudi":["JED","RUH"],"beirut":["BEY"],"lebanon":["BEY"],"middle east":["DXB","DOH","AUH","JED","RUH"],
+  // Africa
+  "cairo":["CAI"],"egypt":["CAI"],"cape town":["CPT"],"johannesburg":["JNB"],"south africa":["JNB","CPT","DUR"],"nairobi":["NBO"],"kenya":["NBO"],"addis ababa":["ADD"],"ethiopia":["ADD"],"lagos":["LOS"],"nigeria":["LOS","ABV"],"accra":["ACC"],"ghana":["ACC"],"casablanca":["CMN"],"morocco":["CMN"],"dar es salaam":["DAR"],"tanzania":["DAR","JRO"],"kilimanjaro":["JRO"],"dakar":["DSS"],"senegal":["DSS"],"mauritius":["MRU"],"durban":["DUR"],"kinshasa":["FIH"],"tunis":["TUN"],"tunisia":["TUN"],"algiers":["ALG"],"africa":["JNB","NBO","ADD","CAI","LOS","CPT"],
+  // Americas
+  "toronto":["YYZ"],"vancouver":["YVR"],"montreal":["YUL"],"ottawa":["YOW"],"calgary":["YYC"],"edmonton":["YEG"],"canada":["YYZ","YVR","YUL"],"mexico city":["MEX"],"cancun":["CUN"],"mexico":["MEX","CUN","GDL"],"puerto vallarta":["PVR"],"los cabos":["SJD"],"cabo":["SJD"],"guadalajara":["GDL"],"bogota":["BOG"],"colombia":["BOG","MDE"],"medellin":["MDE"],"lima":["LIM"],"peru":["LIM","CUZ"],"cusco":["CUZ"],"santiago":["SCL"],"chile":["SCL"],"buenos aires":["EZE"],"argentina":["EZE"],"sao paulo":["GRU"],"rio":["GIG"],"brazil":["GRU","GIG","BSB"],"panama":["PTY"],"costa rica":["SJO"],"havana":["HAV"],"cuba":["HAV"],"punta cana":["PUJ"],"dominican":["PUJ"],"jamaica":["MBJ"],"puerto rico":["SJU"],"san juan":["SJU"],"nassau":["NAS"],"bahamas":["NAS"],"aruba":["AUA"],"st maarten":["SXM"],"cayman":["GCM"],"quito":["UIO"],"ecuador":["UIO"],"caracas":["CCS"],"venezuela":["CCS"],"montevideo":["MVD"],"uruguay":["MVD"],"south america":["GRU","GIG","EZE","LIM","SCL","BOG"],
+  // Oceania
+  "auckland":["AKL"],"new zealand":["AKL","CHC","WLG"],"christchurch":["CHC"],"wellington":["WLG"],"queenstown":["ZQN"],"fiji":["NAN"],"tahiti":["PPT"],"adelaide":["ADL"],"gold coast":["OOL"],
+  // Events
+  "wimbledon":["LHR"],"oktoberfest":["MUC"],"carnival":["GIG","GRU"],"cherry blossom":["NRT","HND"],"f1 monaco":["NCE"],"oktoberfest":["MUC"],"world cup":["DOH"],
+};
+
+function findAirports(q, type) {
+  // First check for 3-letter airport codes directly in query
+  const codeMatch = q.match(/\b([A-Z]{3})\b/gi);
+  if (codeMatch) {
+    for (const code of codeMatch) {
+      const up = code.toUpperCase();
+      if (AIRPORTS.find(a=>a.code===up)) return [up];
+    }
+  }
+  // Then check city/region names
+  for (const [key, codes] of Object.entries(CITY_MAP)) {
+    if (q.includes(key)) return codes;
+  }
+  return null;
+}
+
+async function parseAI(query) {
+  try {
+    const r = await fetch("/api/parse", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({query}),
+    });
+    if (!r.ok) throw new Error("API error");
+    return await r.json();
+  } catch(e) {
+    const q = query.toLowerCase();
+    let cabin = /cheap|budget|affordable/.test(q)?"Economy":"Business";
+    for (const c of ["first","business","premium economy","economy"]) if(q.includes(c)){cabin=c.charAt(0).toUpperCase()+c.slice(1);break;}
+    let alliance="any";
+    if(q.includes("star alliance"))alliance="Star Alliance"; else if(q.includes("oneworld"))alliance="oneworld"; else if(q.includes("skyteam"))alliance="SkyTeam"; else if(q.includes("budget"))alliance="Budget";
+    // Smart origin/destination detection
+    let origins=null, dests=null;
+
+    // Step 1: Try "from X to Y" pattern first (most explicit)
+    // Terminators: date/time words, prepositions, event/timing phrases, or end of string
+    const fromTo = q.match(/from\s+(.+?)\s+to\s+(.+?)(?:\s+(?:in|on|using|for|under|around|before|right|just|after|during|next|this|between|by|within|until)\b|\s*$)/);
+    if (fromTo) {
+      origins = findAirports(fromTo[1].trim(), "origin");
+      dests = findAirports(fromTo[2].trim(), "dest");
+    }
+    // Step 2: Try "X to Y" pattern
+    if (!origins || !dests) {
+      const xToY = q.match(/(.+?)\s+to\s+(.+?)(?:\s+(?:in|on|using|for|under|around|before|right|just|after|during|next|this|between|by|within|until)\b|\s*$)/);
+      if (xToY) {
+        if (!origins) origins = findAirports(xToY[1].trim(), "origin");
+        if (!dests) dests = findAirports(xToY[2].trim(), "dest");
+      }
+    }
+    // Step 3: Detect origins from "from X", "out of X", "departing X"
+    if (!origins) {
+      const outOf = q.match(/(?:out of|from|departing|leaving)\s+(\w[\w\s]*?)(?:\s+to|\s+in|\s+on|\s+before|\s+after|\s*$)/);
+      if (outOf) origins = findAirports(outOf[1].trim().toLowerCase(), "origin");
+    }
+    // Step 4: Scan query for destinations, but remove origin-related words first
+    if (!dests) {
+      let destQ = q;
+      // Remove origin phrases so origin city doesn't become destination
+      destQ = destQ.replace(/(?:from|out of|departing|leaving)\s+[\w\s]+?(?=\s+to\b|\s+in\b|\s+on\b|\s*$)/g, "");
+      // Remove common non-location words
+      destQ = destQ.replace(/\b(?:find|me|a|cheap|budget|affordable|expensive|luxury|flight|flights|ticket|tickets|booking|book|get|show|best|good|great|deal|deals)\b/g, "");
+      destQ = destQ.trim();
+      if (destQ.length > 1) dests = findAirports(destQ, "dest");
+    }
+    // Step 5: Default fallbacks
+    if (!origins) origins = ["JFK","EWR","LGA"];
+    if (!dests) dests = ["LHR","CDG","NRT","SIN","BKK","DXB"];
+    // Ensure origins and dests don't overlap (prevents NYC→NYC type results)
+    if (origins && dests) {
+      const origSet = new Set(origins);
+      const filtered = dests.filter(d => !origSet.has(d));
+      if (filtered.length > 0) dests = filtered;
+      else dests = ["LHR","CDG","NRT","SIN","BKK","DXB"]; // reset to defaults if all overlapped
+    }
+    // Step 6: Parse date/timing hints from query
+    const dateRange = parseDateHints(q);
+
+    const originCity = AIRPORTS.find(a=>origins.includes(a.code));
+    const destCity = AIRPORTS.find(a=>dests.includes(a.code));
+    const dateLabel = dateRange.label || "Flexible";
+    return {origins,destinations:dests,cabin,alliance,program:null,dateRange:dateLabel,dateWindow:dateRange,maxMiles:null,isExplore:false,summary:`${cabin} flights from ${originCity?.city||origins[0]} to ${destCity?.city||dests[0]}${dateLabel!=="Flexible"?` · ${dateLabel}`:""}`};
+  }
+}
+
+// Parse date/timing hints from a query and return {startDate, endDate, label}
+function parseDateHints(q) {
+  const now = new Date();
+  const y = now.getFullYear();
+  const ny = y + 1;
+
+  // Event-based dates (approximate windows people would travel)
+  const EVENT_DATES = {
+    "wimbledon":{m:6,d:20,m2:7,d2:14,label:"Late Jun – Early Jul"}, // travel before + during
+    "oktoberfest":{m:8,d:16,m2:9,d2:6,label:"Mid Sep – Early Oct"},
+    "carnival":{m:1,d:20,m2:2,d2:20,label:"Late Feb – Early Mar"},
+    "cherry blossom":{m:2,d:20,m2:3,d2:15,label:"Late Mar – Mid Apr"},
+    "f1 monaco":{m:4,d:20,m2:5,d2:1,label:"Late May"},
+    "world cup":{m:5,d:1,m2:6,d2:30,label:"Jun – Jul"},
+    "super bowl":{m:1,d:1,m2:1,d2:15,label:"Early Feb"},
+    "thanksgiving":{m:10,d:18,m2:10,d2:28,label:"Late Nov"},
+    "christmas":{m:11,d:15,m2:11,d2:30,label:"Mid – Late Dec"},
+    "new year":{m:11,d:27,m2:0,d2:5,label:"Late Dec – Early Jan"},
+    "spring break":{m:2,d:10,m2:3,d2:10,label:"Mid Mar – Mid Apr"},
+    "fourth of july":{m:5,d:28,m2:6,d2:7,label:"Late Jun – Early Jul"},
+    "4th of july":{m:5,d:28,m2:6,d2:7,label:"Late Jun – Early Jul"},
+    "independence day":{m:5,d:28,m2:6,d2:7,label:"Late Jun – Early Jul"},
+    "labor day":{m:7,d:25,m2:8,d2:8,label:"Late Aug – Early Sep"},
+    "memorial day":{m:4,d:20,m2:4,d2:31,label:"Late May"},
+    "halloween":{m:9,d:25,m2:9,d2:31,label:"Late Oct"},
+    "valentine":{m:1,d:10,m2:1,d2:16,label:"Mid Feb"},
+    "mardi gras":{m:1,d:20,m2:2,d2:8,label:"Late Feb – Early Mar"},
+    "coachella":{m:3,d:8,m2:3,d2:22,label:"Mid Apr"},
+    "ski season":{m:11,d:15,m2:2,d2:15,label:"Dec – Mar"},
+    "summer olympics":{m:6,d:20,m2:7,d2:15,label:"Late Jul – Mid Aug"},
+    "olympics":{m:6,d:20,m2:7,d2:15,label:"Late Jul – Mid Aug"},
+    "ramadan":{m:1,d:20,m2:2,d2:25,label:"Late Feb – Late Mar"},
+    "eid":{m:2,d:25,m2:3,d2:5,label:"Late Mar – Early Apr"},
+    "diwali":{m:9,d:20,m2:10,d2:5,label:"Late Oct – Early Nov"},
+    "chinese new year":{m:0,d:20,m2:1,d2:10,label:"Late Jan – Early Feb"},
+    "lunar new year":{m:0,d:20,m2:1,d2:10,label:"Late Jan – Early Feb"},
+    "golden week":{m:3,d:27,m2:4,d2:7,label:"Late Apr – Early May"},
+    "songkran":{m:3,d:10,m2:3,d2:16,label:"Mid Apr"},
+  };
+
+  const isBefore = /\bbefore\b|right before|just before/.test(q);
+  const isAfter = /\bafter\b|right after|just after/.test(q);
+  const isDuring = /\bduring\b/.test(q);
+
+  for (const [event, info] of Object.entries(EVENT_DATES)) {
+    if (q.includes(event)) {
+      let s = new Date(y, info.m, info.d);
+      let e = new Date(info.m2 < info.m ? ny : y, info.m2, info.d2);
+      // If the window has already passed this year, push to next year
+      if (e < now) { s = new Date(ny, info.m, info.d); e = new Date(info.m2 < info.m ? ny+1 : ny, info.m2, info.d2); }
+      // "before X" = 1-2 weeks before the event starts
+      if (isBefore) {
+        const eventStart = new Date(s);
+        e = new Date(eventStart.getTime() - 1*864e5); // day before event
+        s = new Date(eventStart.getTime() - 14*864e5); // 2 weeks before
+        return {start:s, end:e, label:`Before ${event.charAt(0).toUpperCase()+event.slice(1)}`};
+      }
+      // "after X" = starts at event end, +2 weeks
+      if (isAfter) {
+        const eventEnd = new Date(e);
+        s = new Date(eventEnd.getTime() + 1*864e5);
+        e = new Date(eventEnd.getTime() + 14*864e5);
+        return {start:s, end:e, label:`After ${event.charAt(0).toUpperCase()+event.slice(1)}`};
+      }
+      return {start:s, end:e, label:info.label};
+    }
+  }
+
+  // Season-based
+  const SEASONS = {
+    "summer":{m:5,d:1,m2:7,d2:31,label:"Summer (Jun–Aug)"},
+    "winter":{m:11,d:1,m2:1,d2:28,label:"Winter (Dec–Feb)"},
+    "fall":{m:8,d:1,m2:10,d2:30,label:"Fall (Sep–Nov)"},
+    "autumn":{m:8,d:1,m2:10,d2:30,label:"Autumn (Sep–Nov)"},
+    "spring":{m:2,d:1,m2:4,d2:31,label:"Spring (Mar–May)"},
+  };
+  for (const [season, info] of Object.entries(SEASONS)) {
+    if (q.includes(season)) {
+      let s = new Date(y, info.m, info.d);
+      let e = new Date(info.m2 < info.m ? ny : y, info.m2, info.d2);
+      if (e < now) { s = new Date(ny, info.m, info.d); e = new Date(info.m2 < info.m ? ny+1 : ny, info.m2, info.d2); }
+      return {start:s, end:e, label:info.label};
+    }
+  }
+
+  // Month names
+  const MONTH_NAMES = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+  const SHORT_MONTHS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+  for (let i=0;i<12;i++) {
+    if (q.includes(MONTH_NAMES[i]) || (q.match(new RegExp(`\\b${SHORT_MONTHS[i]}\\b`)) && SHORT_MONTHS[i]!=="may")) {
+      let s = new Date(y, i, 1);
+      let e = new Date(y, i+1, 0); // last day of month
+      if (e < now) { s = new Date(ny, i, 1); e = new Date(ny, i+1, 0); }
+      return {start:s, end:e, label:`${MONTH_NAMES[i].charAt(0).toUpperCase()+MONTH_NAMES[i].slice(1)}`};
+    }
+  }
+
+  // Relative timing
+  if (/next week/.test(q)) { const s=new Date(now.getTime()+5*864e5); const e=new Date(now.getTime()+12*864e5); return {start:s,end:e,label:"Next week"}; }
+  if (/next month/.test(q)) { const s=new Date(y,now.getMonth()+1,1); const e=new Date(y,now.getMonth()+2,0); return {start:s,end:e,label:"Next month"}; }
+  if (/this weekend/.test(q)) { const dow=now.getDay(); const daysToFri=((5-dow)+7)%7||7; const s=new Date(now.getTime()+daysToFri*864e5); const e=new Date(s.getTime()+2*864e5); return {start:s,end:e,label:"This weekend"}; }
+  if (/before|right before|just before/.test(q)) {
+    // "right before wimbledon" etc — already handled by events above, this catches orphan "before X"
+  }
+  if (/after/.test(q)) {
+    // similar — orphan "after X"
+  }
+
+  // Default: flexible (7-90 days out)
+  return {start:new Date(now.getTime()+7*864e5), end:new Date(now.getTime()+90*864e5), label:"Flexible"};
+}
+
+function useCountUp(target, duration=800) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!target) return;
+    const t0 = Date.now();
+    const step = () => {
+      const elapsed = Date.now()-t0;
+      const progress = Math.min(elapsed/duration, 1);
+      const eased = 1-Math.pow(1-progress, 3);
+      setVal(Math.round(target*eased));
+      if (progress<1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [target, duration]);
+  return val;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AIRPORT SEARCH DROPDOWN (defined outside Jovair to keep stable identity)
+// ═══════════════════════════════════════════════════════════════
+
+const _s = { navy:"#0b1d3a", teal:"#00b4a0", muted:"#6b7280", text:"#1a1a2e" };
+
+function AirportSearchDropdown({value, onChange, open, setOpen, label}) {
+  const [search, setSearch] = useState("");
+  const filtered = AIRPORTS.filter(a =>
+    a.code.toLowerCase().includes(search.toLowerCase()) ||
+    a.city.toLowerCase().includes(search.toLowerCase())
+  ).slice(0, 8);
+
+  return (
+    <div style={{position:"relative",flex:1}}>
+      <label style={{fontSize:11,fontWeight:600,color:_s.muted,textTransform:"uppercase",display:"block",marginBottom:6}}>{label}</label>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <input
+          value={search}
+          onChange={e=>setSearch(e.target.value)}
+          onFocus={()=>setOpen(true)}
+          onBlur={()=>setTimeout(()=>setOpen(false),200)}
+          placeholder="Type code or city"
+          style={{flex:1,padding:"10px 12px",border:`1px solid ${open?_s.teal:"#e2e5ea"}`,borderRadius:8,fontSize:13,fontWeight:500,transition:"all 0.2s"}}
+        />
+        {value && <span style={{background:_s.teal,color:"#fff",padding:"4px 10px",borderRadius:6,fontSize:11,fontWeight:600}}>{value}</span>}
+      </div>
+      {open && filtered.length > 0 && (
+        <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#fff",border:`1px solid ${_s.teal}`,borderRadius:8,marginTop:4,boxShadow:"0 4px 12px rgba(0,0,0,0.08)",zIndex:50,maxHeight:200,overflowY:"auto"}}>
+          {filtered.map(ap=>(
+            <button key={ap.code} onClick={()=>{onChange(ap.code);setSearch("");setOpen(false);}} style={{width:"100%",padding:"10px 12px",textAlign:"left",border:"none",background:"none",cursor:"pointer",fontSize:13,color:_s.text,transition:"background 0.15s"}}
+              onMouseEnter={e=>e.target.style.background="#f3f4f6"} onMouseLeave={e=>e.target.style.background="none"}>
+              <strong>{ap.code}</strong> — {ap.city} ({ap.name})
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════════════════════════════════
+
+export default function Jovair() {
+  const [tab, setTab] = useState("search");
+  const [query, setQuery] = useState("");
+  const [phase, setPhase] = useState("home");
+  const [parsed, setParsed] = useState(null);
+  const [flights, setFlights] = useState([]);
+  const [sortBy, setSortBy] = useState("value");
+  const [filterAlliance, setFilterAlliance] = useState("All");
+  const [filterTransfer, setFilterTransfer] = useState(null);
+  const [filterNonstop, setFilterNonstop] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
+  const [scanIndex, setScanIndex] = useState(0);
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [compareIds, setCompareIds] = useState([]);
+  const [manualFrom, setManualFrom] = useState("");
+  const [manualTo, setManualTo] = useState("");
+  const [manualCabin, setManualCabin] = useState("Business");
+  const [manualAlliance, setManualAlliance] = useState("Any");
+  const [manualBudget, setManualBudget] = useState(true);
+  const [manualFromOpen, setManualFromOpen] = useState(false);
+  const [manualToOpen, setManualToOpen] = useState(false);
+  const inputRef = useRef(null);
+
+  const s = { navy:"#0b1d3a", blue:"#1a6eff", teal:"#00b4a0", gold:"#f5a623", red:"#e5384f", bg:"#f6f7f9", text:"#1a1a2e", muted:"#6b7280" };
+
+  const runSearch = useCallback(async(q) => {
+    if (!q.trim()) return;
+    setQuery(q);
+    setTab("search");
+    setPhase("parsing");
+    setExpandedId(null);
+    setCompareIds([]);
+    setSortBy("value");
+    setFilterAlliance("All");
+    setFilterTransfer(null);
+    setFilterNonstop(false);
+    setShowHistory(false);
+
+    setSearchHistory(prev => {
+      const next = [q, ...prev.filter(h=>h!==q)].slice(0,8);
+      return next;
+    });
+
+    const p = await parseAI(q);
+    setParsed(p);
+    setPhase("searching");
+
+    for (let i=0; i<Math.min(20, AIRLINES.length); i++) {
+      await new Promise(r=>setTimeout(r, 90));
+      setScanIndex(i);
+    }
+
+    await new Promise(r=>setTimeout(r, 400));
+
+    // Try real Amadeus API first, fall back to simulated data
+    let realFlights = null;
+    try {
+      const res = await fetch("/api/flights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          origins: p.origins,
+          destinations: p.destinations,
+          departureDate: p.departureDate || null,
+          returnDate: p.returnDate || null,
+          cabin: p.cabin,
+          alliance: p.alliance,
+          maxResults: 12,
+        }),
+      });
+      const data = await res.json();
+      if (data.source === "amadeus" && data.flights?.length > 0) {
+        realFlights = data.flights;
+        console.log(`[Jovair] Got ${realFlights.length} real flights from Amadeus`);
+      }
+    } catch (err) {
+      console.log("[Jovair] Amadeus unavailable, using simulated data:", err.message);
+    }
+
+    setFlights(realFlights || generateFlights(p));
+    setPhase("results");
+  }, []);
+
+  const runManualSearch = useCallback(async () => {
+    if (!manualFrom || !manualTo) return;
+    const p = {
+      origins: [manualFrom],
+      destinations: [manualTo],
+      cabin: manualCabin,
+      alliance: manualAlliance === "Any" ? "any" : manualAlliance,
+      program: null,
+      dateRange: "Flexible",
+      maxMiles: null,
+      includeBudget: manualBudget,
+      summary: `${manualCabin} from ${manualFrom} to ${manualTo}`
+    };
+    setQuery("");
+    setTab("search");
+    setPhase("searching");
+    setExpandedId(null);
+    setCompareIds([]);
+    setSortBy("value");
+    setFilterAlliance("All");
+    setFilterTransfer(null);
+    setFilterNonstop(false);
+    setParsed(p);
+
+    // Try Amadeus first
+    let realFlights = null;
+    try {
+      const res = await fetch("/api/flights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          origins: p.origins,
+          destinations: p.destinations,
+          cabin: p.cabin,
+          alliance: p.alliance,
+          maxResults: 12,
+        }),
+      });
+      const data = await res.json();
+      if (data.source === "amadeus" && data.flights?.length > 0) {
+        realFlights = data.flights;
+      }
+    } catch (err) {
+      // Fall through to simulated
+    }
+
+    setFlights(realFlights || generateFlights(p));
+    setPhase("results");
+  }, [manualFrom, manualTo, manualCabin, manualAlliance, manualBudget]);
+
+  const filtered = useMemo(() => {
+    let f = [...flights];
+    if (filterAlliance!=="All") f=f.filter(fl=>fl.airline.alliance===filterAlliance);
+    if (filterTransfer) f=f.filter(fl=>fl.airline.transfers.includes(filterTransfer));
+    if (filterNonstop) f=f.filter(fl=>fl.nonstop);
+    if (sortBy==="value") f.sort((a,b)=>(b.cpm||0)-(a.cpm||0));
+    else if (sortBy==="miles") f.sort((a,b)=>a.miles-b.miles);
+    else if (sortBy==="cash") f.sort((a,b)=>a.cash-b.cash);
+    else if (sortBy==="fastest") f.sort((a,b)=>a.durationMin-b.durationMin);
+    else if (sortBy==="nonstop") f.sort((a,b)=>a.stops-b.stops);
+    return f;
+  }, [flights,sortBy,filterAlliance,filterTransfer,filterNonstop]);
+
+  const stats = useMemo(()=>{
+    if (!flights.length) return null;
+    const milesFlights = flights.filter(f=>f.miles);
+    return {
+      bestMiles:milesFlights.length ? Math.min(...milesFlights.map(f=>f.miles)) : 0,
+      bestCash:Math.min(...flights.map(f=>f.cash)),
+      bestCpm:milesFlights.length ? Math.max(...milesFlights.map(f=>f.cpm||0)) : 0,
+      avgCpm:milesFlights.length ? +(milesFlights.reduce((s,f)=>s+(f.cpm||0),0)/milesFlights.length).toFixed(1) : 0,
+      nonstops:flights.filter(f=>f.nonstop).length,
+      totalResults:flights.length,
+    };
+  },[flights]);
+
+  const aBestMiles = useCountUp(stats?.bestMiles||0);
+  const aBestCash = useCountUp(stats?.bestCash||0);
+  const aBestCpm = useCountUp((stats?.bestCpm||0)*10)/10;
+  const aAvgCpm = useCountUp((stats?.avgCpm||0)*10)/10;
+
+  // ═══════════ NAV ═══════════
+  const Nav = () => (
+    <nav style={{position:"sticky",top:0,zIndex:1000,background:s.navy,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 28px",height:56,backdropFilter:"blur(12px)"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setTab("search");setPhase("home");}}>
+        <svg width="30" height="30" viewBox="0 0 30 30"><defs><linearGradient id="jvg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00b4a0"/><stop offset="100%" stopColor="#00d4aa"/></linearGradient></defs><circle cx="15" cy="15" r="15" fill="url(#jvg)"/><text x="15" y="20" textAnchor="middle" fill="#fff" fontSize="16" fontWeight="800" fontFamily="'Manrope'">J</text></svg>
+        <span style={{color:"#fff",fontSize:21,fontWeight:800,letterSpacing:"-0.5px"}}>Jovair</span>
+        <span style={{background:"rgba(0,180,160,0.2)",color:s.teal,fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:4,letterSpacing:"0.5px"}}>AI</span>
+      </div>
+      <div style={{display:"flex",gap:2}}>
+        {[["search","Search"],["manual","Manual"],["sweetspots","Sweet Spots"],["devaluations","Devaluations"],["tools","Tools"]].map(([id,label])=>(
+          <button key={id} onClick={()=>{setTab(id);setPhase("home");}} style={{background:tab===id?"rgba(255,255,255,0.1)":"transparent",color:tab===id?"#fff":"rgba(255,255,255,0.55)",border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,fontWeight:tab===id?700:500,cursor:"pointer",transition:"all 0.2s",borderBottom:tab===id?`2px solid ${s.teal}`:"2px solid transparent"}}>{label}</button>
+        ))}
+      </div>
+      <button style={{background:`linear-gradient(135deg, ${s.teal}, #00d4aa)`,color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",fontSize:13,fontWeight:700,cursor:"pointer",transition:"transform 0.15s"}} onMouseEnter={e=>e.target.style.transform="scale(1.03)"} onMouseLeave={e=>e.target.style.transform="scale(1)"}>Sign In</button>
+    </nav>
+  );
+
+  // ═══════════ SEARCH BAR ═══════════
+  const SearchBar = ({big, autoFocus}) => (
+    <div style={{position:"relative",width:"100%",maxWidth:big?740:660}}>
+      <div style={{display:"flex",gap:10}}>
+        <div style={{flex:1,position:"relative"}}>
+          <input ref={big?inputRef:undefined} autoFocus={autoFocus} value={query} onChange={e=>setQuery(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter")runSearch(query);if(e.key==="Escape")setShowHistory(false);}}
+            onFocus={()=>searchHistory.length&&setShowHistory(true)}
+            onBlur={()=>setTimeout(()=>setShowHistory(false),200)}
+            placeholder='Try: "Cheapest business class out of NYC on Star Alliance miles"'
+            style={{width:"100%",padding:big?"18px 20px 18px 48px":"14px 16px 14px 42px",fontSize:big?16:14,fontWeight:500,border:"2px solid #e2e5ea",borderRadius:14,background:"#fff",color:s.text,transition:"all 0.25s",boxShadow:big?"0 4px 24px rgba(0,0,0,0.06)":"none"}}
+            onFocusCapture={e=>{e.target.style.borderColor=s.teal;if(big)e.target.style.boxShadow=`0 4px 24px rgba(0,180,160,0.12)`;}}
+          />
+          <svg style={{position:"absolute",left:big?18:14,top:"50%",transform:"translateY(-50%)",opacity:.35}} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          {query && <button onClick={()=>setQuery("")} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",opacity:.4,fontSize:16,lineHeight:1}}>✕</button>}
+        </div>
+        <button onClick={()=>runSearch(query)} style={{background:`linear-gradient(135deg, ${s.teal}, #00c9a0)`,color:"#fff",border:"none",borderRadius:14,padding:big?"0 32px":"0 22px",fontSize:big?15:14,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.2s",boxShadow:"0 2px 12px rgba(0,180,160,0.25)"}}
+          onMouseEnter={e=>{e.target.style.transform="translateY(-1px)";e.target.style.boxShadow="0 6px 20px rgba(0,180,160,0.35)";}}
+          onMouseLeave={e=>{e.target.style.transform="none";e.target.style.boxShadow="0 2px 12px rgba(0,180,160,0.25)";}}
+        >Search</button>
+      </div>
+      {showHistory && searchHistory.length>0 && (
+        <div style={{position:"absolute",top:"100%",left:0,right:80,background:"#fff",borderRadius:12,marginTop:6,boxShadow:"0 8px 32px rgba(0,0,0,0.12)",border:"1px solid #e8eaef",zIndex:50,overflow:"hidden",animation:"jv-fadein 0.2s ease"}}>
+          <div style={{padding:"8px 14px",fontSize:11,fontWeight:600,color:s.muted,textTransform:"uppercase",letterSpacing:"0.5px"}}>Recent searches</div>
+          {searchHistory.map((h,i)=>(
+            <button key={i} onClick={()=>runSearch(h)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"10px 14px",background:"none",border:"none",cursor:"pointer",fontSize:13,color:s.text,textAlign:"left",transition:"background 0.15s"}}
+              onMouseEnter={e=>e.target.style.background="#f6f7f9"} onMouseLeave={e=>e.target.style.background="none"}>
+              <span style={{opacity:.35,fontSize:14}}>↩</span>{h}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // ═══════════ HOME ═══════════
+  const Home = () => (
+    <div style={{animation:"jv-fadein 0.5s ease"}}>
+      <div style={{textAlign:"center",padding:"72px 24px 48px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,pointerEvents:"none",overflow:"hidden"}}>
+          {AIRLINES.slice(0,8).map((al,i)=>(
+            <div key={al.code} style={{position:"absolute",width:36,height:36,borderRadius:8,background:al.color,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontWeight:700,fontFamily:"'IBM Plex Mono'",opacity:0.08,
+              left:`${10+i*12}%`,top:`${20+Math.sin(i*1.3)*30}%`,animation:`jv-float${i%2===0?"":"2"} ${3+i*0.4}s ease-in-out infinite`,animationDelay:`${i*0.3}s`}}>{al.code}</div>
+          ))}
+        </div>
+        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(0,180,160,0.08)",padding:"6px 16px",borderRadius:20,marginBottom:20}}>
+          <span style={{width:6,height:6,borderRadius:"50%",background:s.teal}} />
+          <span style={{fontSize:12,fontWeight:600,color:s.teal}}>Powered by AI · {AIRLINES.filter(a=>a.type==="full-service").length} Loyalty Programs · {AIRPORTS.length} Airports</span>
+        </div>
+        <h1 style={{fontSize:48,fontWeight:800,color:s.navy,lineHeight:1.1,letterSpacing:"-1.5px",maxWidth:640,margin:"0 auto"}}>Search flights like<br/>you <span style={{background:`linear-gradient(135deg, ${s.teal}, #00d4aa)`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>think</span>.</h1>
+        <p style={{fontSize:17,color:s.muted,marginTop:16,maxWidth:520,marginInline:"auto",lineHeight:1.65}}>
+          Type what you want in plain English. Jovair compares miles vs. cash across every major loyalty program — so you always know the best deal.
+        </p>
+        <div style={{display:"flex",justifyContent:"center",marginTop:36}}>{SearchBar({big:true, autoFocus:true})}</div>
+        <div style={{display:"flex",justifyContent:"center",gap:8,marginTop:20,flexWrap:"wrap"}}>
+          {TRANSFER_PARTNERS.map(tp=>(
+            <span key={tp.name} style={{fontSize:11,fontWeight:600,color:tp.color,opacity:.5,padding:"4px 10px",border:`1px solid ${tp.color}20`,borderRadius:6}}>{tp.name}</span>
+          ))}
+        </div>
+      </div>
+
+      <div style={{maxWidth:780,margin:"0 auto",padding:"0 24px 44px"}}>
+        <p style={{fontSize:11,fontWeight:700,color:s.muted,textTransform:"uppercase",letterSpacing:"1.5px",marginBottom:14}}>Try a search</p>
+        <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+          {EXAMPLE_QUERIES.map((eq,i)=>(
+            <button key={i} onClick={()=>runSearch(eq.text)} style={{background:"#fff",border:"1px solid #e2e5ea",borderRadius:22,padding:"9px 16px",fontSize:13,color:s.text,cursor:"pointer",fontWeight:500,transition:"all 0.2s",display:"flex",alignItems:"center",gap:6}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=s.teal;e.currentTarget.style.background="#f0fdfb";e.currentTarget.style.transform="translateY(-1px)";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#e2e5ea";e.currentTarget.style.background="#fff";e.currentTarget.style.transform="none";}}>
+              <span style={{fontSize:14}}>{eq.icon}</span>{eq.text}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{maxWidth:980,margin:"0 auto",padding:"0 24px 52px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+          <div>
+            <h2 style={{fontSize:24,fontWeight:800,color:s.navy}}>Award Sweet Spots</h2>
+            <p style={{fontSize:14,color:s.muted,marginTop:2}}>Routes where miles deliver outsized value</p>
+          </div>
+          <button onClick={()=>setTab("sweetspots")} style={{background:"none",border:`1px solid ${s.teal}`,color:s.teal,borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:600,cursor:"pointer"}}>View All →</button>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(290px, 1fr))",gap:16}}>
+          {SWEET_SPOTS.slice(0,4).map((sp,idx)=>{
+            const al=alByCode(sp.airline);
+            return (
+              <div key={sp.id} onClick={()=>runSearch(sp.query)} style={{background:"#fff",borderRadius:14,padding:22,cursor:"pointer",border:"1px solid #e8eaef",transition:"all 0.25s",animation:`jv-fadein 0.5s ease ${idx*0.1}s both`}}
+                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow="0 8px 28px rgba(0,0,0,0.08)";}}
+                onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{width:38,height:38,borderRadius:8,background:al?.color,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:700,fontFamily:"'IBM Plex Mono'"}}>{sp.airline}</div>
+                    <div>
+                      <div style={{fontSize:15,fontWeight:700,color:s.navy}}>{sp.route}</div>
+                      <div style={{fontSize:11,color:s.muted}}>{sp.program} · {sp.cabin}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="jv-mono" style={{fontSize:24,fontWeight:700,color:s.teal}}>{sp.miles.toLocaleString()} <span style={{fontSize:12,fontWeight:500,color:s.muted}}>miles</span></div>
+                <div style={{fontSize:12,fontWeight:600,color:s.teal,marginTop:4}}>{sp.savings}</div>
+                <p style={{fontSize:12,color:s.muted,marginTop:8,lineHeight:1.5}}>{sp.desc.slice(0,90)}...</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{background:s.navy,padding:"52px 24px"}}>
+        <div style={{maxWidth:980,margin:"0 auto"}}>
+          <h2 style={{fontSize:24,fontWeight:800,color:"#fff",textAlign:"center"}}>Why Jovair Exists</h2>
+          <p style={{fontSize:14,color:"rgba(255,255,255,0.5)",textAlign:"center",marginTop:6,marginBottom:36}}>The points & miles industry has real problems. We're fixing them.</p>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(230px, 1fr))",gap:16}}>
+            {[
+              {icon:"🔍",title:"Transparency Crisis",desc:"Airlines hide true point values behind dynamic pricing. Jovair shows the real cents-per-mile on every flight."},
+              {icon:"🧩",title:"Fragmented Search",desc:"Comparing miles vs. cash requires 20+ websites. Jovair unifies everything in one search."},
+              {icon:"📉",title:"Silent Devaluations",desc:"Programs devalue points with no warning. Jovair tracks changes and alerts you."},
+              {icon:"🤖",title:"AI-First Discovery",desc:"Stop filling out rigid forms. Just type what you want in plain English."},
+            ].map((c,i)=>(
+              <div key={i} style={{background:"rgba(255,255,255,0.05)",borderRadius:14,padding:24,border:"1px solid rgba(255,255,255,0.08)",animation:`jv-fadein 0.5s ease ${i*0.1}s both`}}>
+                <div style={{fontSize:32,marginBottom:10}}>{c.icon}</div>
+                <div style={{fontSize:15,fontWeight:700,color:"#fff",marginBottom:8}}>{c.title}</div>
+                <div style={{fontSize:13,color:"rgba(255,255,255,0.55)",lineHeight:1.6}}>{c.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{maxWidth:980,margin:"0 auto",padding:"48px 24px 64px",textAlign:"center"}}>
+        <div style={{display:"flex",justifyContent:"center",gap:48,flexWrap:"wrap"}}>
+          {[[AIRLINES.filter(a=>a.type==="full-service").length,"Loyalty Programs"],[AIRPORTS.length,"Airports"],["5","Transfer Partners"],["$400B+","Points Outstanding"]].map(([n,l],i)=>(
+            <div key={i}>
+              <div className="jv-mono" style={{fontSize:36,fontWeight:800,color:s.navy}}>{n}</div>
+              <div style={{fontSize:13,color:s.muted,marginTop:2}}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ═══════════ MANUAL SEARCH TAB ═══════════
+  const ManualSearch = () => (
+    <div style={{maxWidth:820,margin:"0 auto",padding:"36px 24px 64px",animation:"jv-fadein 0.4s ease"}}>
+      <h1 style={{fontSize:30,fontWeight:800,color:s.navy}}>Manual Search</h1>
+      <p style={{fontSize:14,color:s.muted,marginTop:6,marginBottom:32}}>Find flights with structured search parameters.</p>
+
+      <div style={{background:"#fff",borderRadius:16,padding:32,border:"1px solid #e8eaef"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
+          <AirportSearchDropdown value={manualFrom} onChange={setManualFrom} open={manualFromOpen} setOpen={setManualFromOpen} label="From" />
+          <AirportSearchDropdown value={manualTo} onChange={setManualTo} open={manualToOpen} setOpen={setManualToOpen} label="To" />
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,marginBottom:24}}>
+          <div>
+            <label style={{fontSize:11,fontWeight:600,color:s.muted,textTransform:"uppercase",display:"block",marginBottom:6}}>Cabin Class</label>
+            <select value={manualCabin} onChange={e=>setManualCabin(e.target.value)} style={{width:"100%",padding:"10px 12px",border:`1px solid #e2e5ea`,borderRadius:8,fontSize:13,fontWeight:500}}>
+              <option>Economy</option>
+              <option>Premium Economy</option>
+              <option>Business</option>
+              <option>First</option>
+            </select>
+          </div>
+          <div>
+            <label style={{fontSize:11,fontWeight:600,color:s.muted,textTransform:"uppercase",display:"block",marginBottom:6}}>Alliance Filter</label>
+            <select value={manualAlliance} onChange={e=>setManualAlliance(e.target.value)} style={{width:"100%",padding:"10px 12px",border:`1px solid #e2e5ea`,borderRadius:8,fontSize:13,fontWeight:500}}>
+              <option>Any</option>
+              <option>Star Alliance</option>
+              <option>oneworld</option>
+              <option>SkyTeam</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:24,padding:"14px",background:"#f3f4f6",borderRadius:8}}>
+          <input type="checkbox" id="budget-toggle" checked={manualBudget} onChange={e=>setManualBudget(e.target.checked)} style={{cursor:"pointer"}} />
+          <label htmlFor="budget-toggle" style={{cursor:"pointer",fontSize:13,fontWeight:500,color:s.text}}>Include budget airlines</label>
+        </div>
+
+        <button onClick={runManualSearch} disabled={!manualFrom || !manualTo} style={{width:"100%",background:manualFrom&&manualTo?`linear-gradient(135deg, ${s.teal}, #00c9a0)`:"#ccc",color:"#fff",border:"none",borderRadius:10,padding:"14px 20px",fontSize:15,fontWeight:700,cursor:manualFrom&&manualTo?"pointer":"not-allowed",transition:"all 0.2s"}}>
+          Search Flights
+        </button>
+      </div>
+    </div>
+  );
+
+  // ═══════════ PARSING ═══════════
+  const Parsing = () => (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:420,animation:"jv-fadein 0.3s ease"}}>
+      <div style={{width:52,height:52,border:`3px solid ${s.teal}`,borderTopColor:"transparent",borderRadius:"50%",animation:"jv-spin 0.7s linear infinite",marginBottom:28}} />
+      <div style={{fontSize:20,fontWeight:700,color:s.navy}}>AI is parsing your search...</div>
+      <div style={{fontSize:13,color:s.muted,marginTop:8,maxWidth:400,textAlign:"center"}}>Understanding route, dates, cabin, alliance & program preferences</div>
+      <div style={{background:"#fff",borderRadius:12,padding:"12px 20px",marginTop:24,border:"1px solid #e8eaef"}}>
+        <span style={{fontSize:13,color:s.text,fontWeight:500}}>"{query}"</span>
+      </div>
+    </div>
+  );
+
+  // ═══════════ SEARCHING ═══════════
+  const Searching = () => (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:420,animation:"jv-fadein 0.3s ease"}}>
+      {parsed?.summary && (
+        <div style={{background:"#fff",borderRadius:12,padding:"12px 20px",marginBottom:28,border:"1px solid #e8eaef",maxWidth:520}}>
+          <span style={{fontSize:11,fontWeight:700,color:s.teal,marginRight:8}}>✓ PARSED</span>
+          <span style={{fontSize:13,color:s.text}}>{parsed.summary}</span>
+        </div>
+      )}
+      <div style={{fontSize:18,fontWeight:700,color:s.navy,marginBottom:20}}>Scanning top airlines...</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:8,maxWidth:500,justifyContent:"center",marginBottom:28}}>
+        {AIRLINES.slice(0,20).map((al,i)=>(
+          <div key={al.code} style={{width:42,height:42,borderRadius:8,background:i<=scanIndex?al.color:"#e8eaef",display:"flex",alignItems:"center",justifyContent:"center",color:i<=scanIndex?"#fff":"#ccc",fontSize:10,fontWeight:700,fontFamily:"'IBM Plex Mono'",transition:"all 0.3s",transform:i===scanIndex?"scale(1.15)":"scale(1)",boxShadow:i===scanIndex?`0 4px 16px ${al.color}40`:"none"}}>{al.code}</div>
+        ))}
+      </div>
+      <div style={{width:300,height:4,background:"#e8eaef",borderRadius:2,overflow:"hidden"}}>
+        <div style={{height:"100%",background:s.teal,borderRadius:2,transition:"width 0.1s",width:`${(scanIndex/20)*100}%`}} />
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:12,marginTop:32,width:"100%",maxWidth:660}}>
+        {[1,2,3].map(i=>(
+          <div key={i} style={{height:85,borderRadius:14,background:"linear-gradient(90deg, #e8eaef 25%, #f3f4f6 50%, #e8eaef 75%)",backgroundSize:"800px",animation:"jv-shimmer 1.5s infinite linear",opacity:1-i*0.2}} />
+        ))}
+      </div>
+    </div>
+  );
+
+  // ═══════════ FLIGHT CARD ═══════════
+  const FlightCard = ({fl, rank}) => {
+    const expanded = expandedId===fl.id;
+    const isBest = rank===0;
+    const rating = fl.miles ? cpmRating(fl.cpm) : null;
+    const orig = apByCode(fl.origin);
+    const dest = apByCode(fl.destination);
+
+    return (
+      <div style={{background:"#fff",borderRadius:16,cursor:"pointer",border:isBest?`2px solid ${s.teal}`:"1px solid #e8eaef",animation:`jv-fadein 0.4s ease ${rank*0.05}s both`,transition:"all 0.25s",position:"relative",overflow:"hidden",...(isBest?{boxShadow:`0 0 0 1px ${s.teal}20, 0 8px 32px ${s.teal}15`}:{})}}
+        onMouseEnter={e=>{if(!isBest)e.currentTarget.style.boxShadow="0 4px 20px rgba(0,0,0,0.06)";}}
+        onMouseLeave={e=>{if(!isBest)e.currentTarget.style.boxShadow="none";}}>
+        {isBest && (
+          <div style={{background:`linear-gradient(135deg, ${s.teal}, #00d4aa)`,color:"#fff",fontSize:11,fontWeight:700,padding:"5px 16px",textAlign:"center",letterSpacing:"0.5px",animation:"jv-ribbon 0.5s ease"}}>
+            🏆 BEST VALUE — Save ${(fl.cash-fl.fees).toLocaleString()} by using {fl.miles ? fl.miles.toLocaleString() + " miles" : "cash"}
+          </div>
+        )}
+        <div style={{padding:"18px 22px"}} onClick={()=>setExpandedId(expanded?null:fl.id)}>
+          <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,minWidth:175}}>
+              <div style={{width:42,height:42,borderRadius:10,background:fl.airline.color,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:13,fontWeight:700,fontFamily:"'IBM Plex Mono'",flexShrink:0}}>{fl.airline.code}</div>
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:s.navy}}>{fl.airline.name}</div>
+                <div style={{fontSize:11,color:s.muted}}>{fl.depDate} · {fl.aircraft}</div>
+              </div>
+            </div>
+
+            <div style={{display:"flex",alignItems:"center",gap:14,flex:1,minWidth:250,justifyContent:"center"}}>
+              <div style={{textAlign:"right"}}>
+                <div className="jv-mono" style={{fontSize:20,fontWeight:700,color:s.navy}}>{fl.depTime}</div>
+                <div className="jv-mono" style={{fontSize:12,fontWeight:600,color:s.muted}}>{fl.origin}</div>
+                {orig && <div style={{fontSize:10,color:s.muted}}>{orig.city}</div>}
+              </div>
+              <div style={{flex:1,maxWidth:170,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                <div style={{fontSize:11,color:s.muted,fontWeight:500}}>{fl.duration}</div>
+                <div style={{width:"100%",height:2,background:"#e2e5ea",position:"relative",borderRadius:1}}>
+                  <div style={{position:"absolute",left:0,top:-3,width:8,height:8,borderRadius:"50%",background:s.teal}} />
+                  {fl.stops>0 && Array.from({length:fl.stops}).map((_,i)=>(
+                    <div key={i} style={{position:"absolute",left:`${(i+1)*100/(fl.stops+1)}%`,top:-2,width:6,height:6,borderRadius:"50%",background:"#d1d5db",border:"2px solid #fff"}} />
+                  ))}
+                  <div style={{position:"absolute",right:0,top:-3,width:8,height:8,borderRadius:"50%",background:s.teal}} />
+                </div>
+                <div style={{fontSize:11,color:fl.nonstop?s.teal:s.muted,fontWeight:fl.nonstop?600:400}}>
+                  {fl.nonstop?"Nonstop":`${fl.stops} stop${fl.stops>1?"s":""}`}
+                </div>
+              </div>
+              <div style={{textAlign:"left"}}>
+                <div className="jv-mono" style={{fontSize:20,fontWeight:700,color:s.navy}}>{fl.arrTime}</div>
+                <div className="jv-mono" style={{fontSize:12,fontWeight:600,color:s.muted}}>{fl.destination}</div>
+                {dest && <div style={{fontSize:10,color:s.muted}}>{dest.city}</div>}
+              </div>
+            </div>
+
+            <div style={{display:"flex",gap:10,alignItems:"center",flexShrink:0}}>
+              {fl.miles ? (
+                <>
+                  <div style={{background:"#f0fdfb",border:`1px solid ${s.teal}25`,borderRadius:12,padding:"10px 16px",textAlign:"center",minWidth:115}}>
+                    <div className="jv-mono" style={{fontSize:19,fontWeight:700,color:s.teal}}>{fl.miles.toLocaleString()}</div>
+                    <div style={{fontSize:10,color:s.muted}}>miles + ${fl.fees}</div>
+                    <div className="jv-mono" style={{fontSize:9,color:s.muted,marginTop:1}}>{fl.fareClass} class</div>
+                  </div>
+                  <div style={{background:"#eff6ff",border:`1px solid ${s.blue}25`,borderRadius:12,padding:"10px 16px",textAlign:"center",minWidth:95}}>
+                    <div className="jv-mono" style={{fontSize:19,fontWeight:700,color:s.blue}}>${fl.cash.toLocaleString()}</div>
+                    <div style={{fontSize:10,color:s.muted}}>cash fare</div>
+                  </div>
+                  <div style={{background:rating.bg,borderRadius:12,padding:"10px 14px",textAlign:"center",minWidth:78}}>
+                    <div className="jv-mono" style={{fontSize:19,fontWeight:700,color:rating.color}}>{fl.cpm}¢</div>
+                    <div style={{fontSize:10,fontWeight:600,color:rating.color}}>{rating.emoji} {rating.label}</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{background:"#fff3cd",border:`1px solid ${s.gold}40`,borderRadius:12,padding:"10px 16px",textAlign:"center",minWidth:115}}>
+                    <div className="jv-mono" style={{fontSize:16,fontWeight:700,color:s.gold}}>CASH ONLY</div>
+                    <div style={{fontSize:10,color:s.muted}}>Budget airline</div>
+                  </div>
+                  <div style={{background:"#eff6ff",border:`1px solid ${s.blue}25`,borderRadius:12,padding:"10px 16px",textAlign:"center",minWidth:95}}>
+                    <div className="jv-mono" style={{fontSize:19,fontWeight:700,color:s.blue}}>${fl.cash.toLocaleString()}</div>
+                    <div style={{fontSize:10,color:s.muted}}>cash fare</div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5,minWidth:85}}>
+              <span style={{background:ALLIANCE_COLORS[fl.airline.alliance]+"18",color:ALLIANCE_COLORS[fl.airline.alliance],fontSize:10,fontWeight:600,padding:"3px 9px",borderRadius:5}}>{fl.airline.alliance}</span>
+              <span style={{fontSize:11,color:fl.seats<=3?s.red:s.muted,fontWeight:fl.seats<=3?700:400}}>
+                {fl.seats<=3?"🔥 ":""}{fl.seats} seat{fl.seats>1?"s":""}
+              </span>
+              {fl.hasDevaluation && <span style={{fontSize:10,color:s.gold,fontWeight:600}}>⚠️ Devalued</span>}
+            </div>
+          </div>
+
+          {expanded && (
+            <div style={{marginTop:18,paddingTop:18,borderTop:"1px solid #eef0f4",animation:"jv-fadein 0.3s ease"}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))",gap:18}}>
+                <div>
+                  <div style={{fontSize:10,fontWeight:700,color:s.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:8}}>Book Via</div>
+                  <div style={{fontSize:15,fontWeight:700,color:s.navy}}>{fl.airline.program || "Cash booking"}</div>
+                  <div style={{fontSize:12,color:s.muted,marginTop:2}}>{orig?.city||fl.origin} → {dest?.city||fl.destination} · {fl.cabin} · {fl.depDate}{fl.arrDate ? ` → ${fl.arrDate}`:""}</div>
+                </div>
+                {fl.miles && (
+                  <div>
+                    <div style={{fontSize:10,fontWeight:700,color:s.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:8}}>Value Math</div>
+                    <div className="jv-mono" style={{fontSize:13,color:s.text,lineHeight:1.8}}>
+                      ${fl.cash.toLocaleString()} − ${fl.fees} = <strong>${(fl.cash-fl.fees).toLocaleString()}</strong><br/>
+                      ${(fl.cash-fl.fees).toLocaleString()} ÷ {fl.miles.toLocaleString()} mi = <span style={{color:rating.color,fontWeight:700,fontSize:15}}>{fl.cpm}¢/mi</span>
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <div style={{fontSize:10,fontWeight:700,color:s.muted,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:8}}>{fl.miles ? "Transfer Partners" : "Program"}</div>
+                  {fl.miles && fl.airline.transfers.length>0 ? (
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                      {fl.airline.transfers.map(tp=>{const t=TRANSFER_PARTNERS.find(x=>x.name===tp);return <span key={tp} style={{background:t?.color+"12",color:t?.color,border:`1px solid ${t?.color}28`,fontSize:11,fontWeight:600,padding:"5px 11px",borderRadius:7}}>{tp}</span>;})}
+                    </div>
+                  ) : <div style={{fontSize:12,color:s.muted}}>{fl.miles ? "No major transfer partners" : "No loyalty program"}</div>}
+                </div>
+              </div>
+              {fl.hasDevaluation && fl.devaluation && (
+                <div style={{background:"#fef6e6",border:`1px solid ${s.gold}35`,borderRadius:12,padding:16,marginTop:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:s.gold}}>⚠️ Devaluation Alert — {fl.devaluation.program} ({fl.devaluation.date})</div>
+                  <div style={{fontSize:12,color:s.text,marginTop:4}}>{fl.devaluation.desc}</div>
+                </div>
+              )}
+              {fl.miles && (
+                <div style={{background:"#f0fdfb",border:`1px solid ${s.teal}25`,borderRadius:12,padding:16,marginTop:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:s.teal,marginBottom:4}}>🤖 AI Recommendation</div>
+                  <div style={{fontSize:13,color:s.text,lineHeight:1.55}}>{aiRec(fl.cpm)}</div>
+                </div>
+              )}
+              <div style={{display:"flex",gap:10,marginTop:16,flexWrap:"wrap"}}>
+                <button onClick={()=>window.open(`https://www.google.com/travel/flights?q=flights+from+${fl.origin}+to+${fl.destination}+${fl.depDate?fl.depDate.replace(/,/g,""):""}`, "_blank")}
+                  style={{background:`linear-gradient(135deg, ${s.teal}, #00c9a0)`,color:"#fff",border:"none",borderRadius:10,padding:"11px 22px",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:`0 2px 12px ${s.teal}30`,transition:"transform 0.15s"}}
+                  onMouseEnter={e=>e.target.style.transform="translateY(-1px)"} onMouseLeave={e=>e.target.style.transform="none"}>
+                  {fl.miles ? "Book with Miles →" : "Book Now →"}
+                </button>
+                <button onClick={()=>window.open(`https://www.google.com/travel/flights?q=${fl.airline.name}+${fl.origin}+to+${fl.destination}`, "_blank")}
+                  style={{background:s.blue,color:"#fff",border:"none",borderRadius:10,padding:"11px 22px",fontSize:13,fontWeight:700,cursor:"pointer",transition:"transform 0.15s"}}
+                  onMouseEnter={e=>e.target.style.transform="translateY(-1px)"} onMouseLeave={e=>e.target.style.transform="none"}>
+                  View on Google Flights
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ═══════════ RESULTS ═══════════
+  const Results = () => (
+    <div style={{maxWidth:1060,margin:"0 auto",padding:"24px 24px 64px",animation:"jv-fadein 0.4s ease"}}>
+      <div style={{display:"flex",justifyContent:"center",marginBottom:24}}>{SearchBar({})}</div>
+
+      {parsed && (
+        <div style={{background:"#fff",borderRadius:14,padding:"14px 22px",marginBottom:18,border:"1px solid #e8eaef",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+          <span style={{background:`linear-gradient(135deg, ${s.teal}15, ${s.teal}08)`,color:s.teal,fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:8,border:`1px solid ${s.teal}20`}}>🤖 AI Understood</span>
+          {flights[0]?.source==="amadeus" && <span style={{background:"#eef6ff",color:"#1a6eff",fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:6,border:"1px solid #1a6eff20",letterSpacing:"0.3px"}}>✈ LIVE DATA</span>}
+          <span style={{fontSize:14,color:s.navy,fontWeight:600,flex:1}}>{parsed.summary}</span>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+            {parsed.origins?.slice(0,3).map(o=><span key={o} className="jv-mono" style={{fontSize:11,color:s.muted,background:"#f3f4f6",padding:"3px 8px",borderRadius:5,fontWeight:600}}>{o}</span>)}
+            <span style={{color:s.muted,fontSize:11}}>→</span>
+            {parsed.destinations?.slice(0,3).map(d=><span key={d} className="jv-mono" style={{fontSize:11,color:s.muted,background:"#f3f4f6",padding:"3px 8px",borderRadius:5,fontWeight:600}}>{d}</span>)}
+            <span style={{background:`${s.teal}10`,color:s.teal,fontSize:11,fontWeight:600,padding:"3px 8px",borderRadius:5}}>{parsed.cabin}</span>
+          </div>
+        </div>
+      )}
+
+      {stats && (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:22}}>
+          {[
+            {label:"Best Miles",value:aBestMiles.toLocaleString(),sub:"miles",color:s.teal,icon:"✈️"},
+            {label:"Best Cash",value:`$${aBestCash.toLocaleString()}`,sub:"fare",color:s.blue,icon:"💵"},
+            {label:"Best ¢/mi",value:`${aBestCpm}¢`,sub:"per mile",color:"#3b9e3b",icon:"🔥"},
+            {label:"Avg Value",value:`${aAvgCpm}¢`,sub:"per mile",color:s.gold,icon:"📊"},
+            {label:"Nonstop",value:stats.nonstops,sub:`of ${stats.totalResults}`,color:s.navy,icon:"⚡"},
+          ].map((m,i)=>(
+            <div key={i} style={{background:"#fff",borderRadius:12,padding:"16px 14px",border:"1px solid #e8eaef",textAlign:"center",borderTop:`3px solid ${m.color}`,animation:`jv-countup 0.5s ease ${i*0.1}s both`}}>
+              <div style={{fontSize:11,color:s.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{m.icon} {m.label}</div>
+              <div className="jv-mono" style={{fontSize:24,fontWeight:700,color:m.color,marginTop:4}}>{m.value}</div>
+              <div style={{fontSize:10,color:s.muted}}>{m.sub}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{background:"#fff",borderRadius:12,padding:"12px 18px",marginBottom:22,border:"1px solid #e8eaef",display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+        <span style={{fontSize:11,fontWeight:700,color:s.muted}}>Sort:</span>
+        {[["value","Best Value"],["miles","Miles ↑"],["cash","Cash ↑"],["fastest","Fastest"],["nonstop","Nonstop"]].map(([id,l])=>(
+          <button key={id} onClick={()=>setSortBy(id)} style={{background:sortBy===id?s.navy:"transparent",color:sortBy===id?"#fff":s.muted,border:`1px solid ${sortBy===id?s.navy:"#e2e5ea"}`,borderRadius:20,padding:"5px 13px",fontSize:11,fontWeight:600,cursor:"pointer"}}>{l}</button>
+        ))}
+        <div style={{width:1,height:20,background:"#e2e5ea",margin:"0 4px"}} />
+        <span style={{fontSize:11,fontWeight:700,color:s.muted}}>Alliance:</span>
+        {["All","Star Alliance","oneworld","SkyTeam"].map(a=>(
+          <button key={a} onClick={()=>setFilterAlliance(a)} style={{background:filterAlliance===a?(ALLIANCE_COLORS[a]||s.navy):"transparent",color:filterAlliance===a?"#fff":s.muted,border:`1px solid ${filterAlliance===a?(ALLIANCE_COLORS[a]||s.navy):"#e2e5ea"}`,borderRadius:20,padding:"5px 13px",fontSize:11,fontWeight:600,cursor:"pointer"}}>{a}</button>
+        ))}
+        <div style={{width:1,height:20,background:"#e2e5ea",margin:"0 4px"}} />
+        {TRANSFER_PARTNERS.map(tp=>(
+          <button key={tp.name} onClick={()=>setFilterTransfer(filterTransfer===tp.name?null:tp.name)} style={{background:filterTransfer===tp.name?tp.color:"transparent",color:filterTransfer===tp.name?"#fff":s.muted,border:`1px solid ${filterTransfer===tp.name?tp.color:"#e2e5ea"}`,borderRadius:20,padding:"5px 11px",fontSize:10,fontWeight:600,cursor:"pointer"}}>{tp.short}</button>
+        ))}
+        <div style={{width:1,height:20,background:"#e2e5ea",margin:"0 4px"}} />
+        <button onClick={()=>setFilterNonstop(!filterNonstop)} style={{background:filterNonstop?s.teal:"transparent",color:filterNonstop?"#fff":s.muted,border:`1px solid ${filterNonstop?s.teal:"#e2e5ea"}`,borderRadius:20,padding:"5px 13px",fontSize:11,fontWeight:600,cursor:"pointer"}}>Nonstop</button>
+      </div>
+
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+        {filtered.length>0 ? filtered.map((fl,i)=><FlightCard key={fl.id} fl={fl} rank={i}/>) : (
+          <div style={{textAlign:"center",padding:48,color:s.muted}}>
+            <div style={{fontSize:32,marginBottom:12}}>🔍</div>
+            <div style={{fontSize:16,fontWeight:600,color:s.navy}}>No flights match your filters</div>
+            <div style={{fontSize:13,marginTop:6}}>Try adjusting your alliance, transfer partner, or nonstop filters.</div>
+            <button onClick={()=>{setFilterAlliance("All");setFilterTransfer(null);setFilterNonstop(false);}} style={{background:s.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px 20px",marginTop:16,fontSize:13,fontWeight:600,cursor:"pointer"}}>Reset Filters</button>
+          </div>
+        )}
+      </div>
+
+      {filtered.length>0 && (
+        <div style={{background:"#fff",borderRadius:14,padding:"16px 22px",marginTop:24,border:"1px solid #e8eaef"}}>
+          <div style={{fontSize:12,fontWeight:700,color:s.navy,marginBottom:10}}>Value Guide — Cents per Mile</div>
+          <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
+            {[{r:"2.0¢+",l:"Excellent",c:"#00b4a0",e:"🔥"},{r:"1.5–2.0¢",l:"Good",c:"#3b9e3b",e:"👍"},{r:"1.0–1.5¢",l:"Fair",c:"#f5a623",e:"⚖️"},{r:"<1.0¢",l:"Pay Cash",c:"#e5384f",e:"💵"}].map(v=>(
+              <div key={v.l} style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontSize:14}}>{v.e}</span>
+                <div style={{width:10,height:10,borderRadius:3,background:v.c}} />
+                <span className="jv-mono" style={{fontSize:12,fontWeight:600,color:s.text}}>{v.r}</span>
+                <span style={{fontSize:12,color:s.muted}}>{v.l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ═══════════ SWEET SPOTS TAB ═══════════
+  const SweetSpotsTab = () => (
+    <div style={{maxWidth:980,margin:"0 auto",padding:"36px 24px 64px",animation:"jv-fadein 0.4s ease"}}>
+      <h1 style={{fontSize:30,fontWeight:800,color:s.navy}}>Award Sweet Spots</h1>
+      <p style={{fontSize:14,color:s.muted,marginTop:6,marginBottom:32}}>The best-value redemptions across all major loyalty programs. Click any to search.</p>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(310px, 1fr))",gap:20}}>
+        {SWEET_SPOTS.map((sp,idx)=>{const al=alByCode(sp.airline);return(
+          <div key={sp.id} onClick={()=>runSearch(sp.query)} style={{background:"#fff",borderRadius:16,padding:26,cursor:"pointer",border:"1px solid #e8eaef",transition:"all 0.25s",animation:`jv-fadein 0.5s ease ${idx*0.08}s both`}}
+            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow="0 10px 32px rgba(0,0,0,0.1)";}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:44,height:44,borderRadius:10,background:al?.color,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:14,fontWeight:700,fontFamily:"'IBM Plex Mono'"}}>{sp.airline}</div>
+                <div><div style={{fontSize:17,fontWeight:700,color:s.navy}}>{sp.route}</div><div style={{fontSize:12,color:s.muted}}>{sp.program}</div></div>
+              </div>
+              <span style={{background:ALLIANCE_COLORS[sp.alliance]+"18",color:ALLIANCE_COLORS[sp.alliance],fontSize:10,fontWeight:600,padding:"4px 10px",borderRadius:5}}>{sp.alliance}</span>
+            </div>
+            <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:8}}>
+              <span className="jv-mono" style={{fontSize:30,fontWeight:700,color:s.teal}}>{sp.miles.toLocaleString()}</span>
+              <span style={{fontSize:13,color:s.muted}}>miles · {sp.cabin}</span>
+            </div>
+            <div style={{fontSize:12,fontWeight:700,color:s.teal,marginBottom:10}}>{sp.savings}</div>
+            <p style={{fontSize:13,color:s.muted,lineHeight:1.6,marginBottom:14}}>{sp.desc}</p>
+            {sp.transfers.length>0 && (
+              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                {sp.transfers.map(tp=>{const t=TRANSFER_PARTNERS.find(x=>x.name===tp);return <span key={tp} style={{background:t?.color+"10",color:t?.color,fontSize:10,fontWeight:600,padding:"3px 9px",borderRadius:5,border:`1px solid ${t?.color}20`}}>{tp}</span>;})}
+              </div>
+            )}
+          </div>
+        );})}
+      </div>
+    </div>
+  );
+
+  // ═══════════ DEVALUATIONS TAB ═══════════
+  const DevaluationsTab = () => (
+    <div style={{maxWidth:780,margin:"0 auto",padding:"36px 24px 64px",animation:"jv-fadein 0.4s ease"}}>
+      <h1 style={{fontSize:30,fontWeight:800,color:s.navy}}>Devaluation Tracker</h1>
+      <p style={{fontSize:14,color:s.muted,marginTop:6,marginBottom:32}}>Stay informed — programs change award pricing constantly.</p>
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        {DEVALUATIONS.map((d,i)=>{const al=d.airline?alByCode(d.airline):null;return(
+          <div key={i} style={{background:"#fff",borderRadius:14,padding:"20px 22px",border:"1px solid #e8eaef",borderLeft:`4px solid ${d.color}`,animation:`jv-fadein 0.4s ease ${i*0.08}s both`}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                {al && <div style={{width:34,height:34,borderRadius:7,background:al.color,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontWeight:700,fontFamily:"'IBM Plex Mono'"}}>{al.code}</div>}
+                <div><div style={{fontSize:16,fontWeight:700,color:s.navy}}>{d.program}</div><div style={{fontSize:12,color:s.muted}}>{d.date}</div></div>
+              </div>
+              <span style={{background:d.color+"15",color:d.color,fontSize:10,fontWeight:700,padding:"4px 12px",borderRadius:5,letterSpacing:"0.5px"}}>{d.severity}</span>
+            </div>
+            <p style={{fontSize:13,color:s.text,lineHeight:1.6}}>{d.desc}</p>
+          </div>
+        );})}
+      </div>
+      <div style={{background:"#f0fdfb",border:`1px solid ${s.teal}25`,borderRadius:16,padding:28,marginTop:32}}>
+        <div style={{fontSize:18,fontWeight:700,color:s.navy,marginBottom:14}}>🛡️ How to Protect Yourself</div>
+        <div style={{fontSize:13,color:s.text,lineHeight:1.75}}>
+          <strong>Earn and burn.</strong> Don't hoard miles — use them within 6-12 months of earning. Programs devalue constantly.
+          <br/><br/><strong>Diversify.</strong> Keep points in transferable currencies (Chase UR, Amex MR) so you can move to whichever program offers the best value.
+          <br/><br/><strong>Watch the 90-day rule.</strong> US programs typically give ~90 days notice before devaluations. Follow points blogs and set alerts.
+          <br/><br/><strong>Book sweet spots now.</strong> When you see an outstanding redemption, lock it in. These deals disappear.
+        </div>
+      </div>
+    </div>
+  );
+
+  // ═══════════ TOOLS TAB ═══════════
+  const ToolsTab = () => (
+    <div style={{maxWidth:780,margin:"0 auto",padding:"36px 24px 64px",animation:"jv-fadein 0.4s ease"}}>
+      <h1 style={{fontSize:30,fontWeight:800,color:s.navy}}>Tools</h1>
+      <p style={{fontSize:14,color:s.muted,marginTop:6,marginBottom:32}}>Powerful utilities coming soon.</p>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(230px, 1fr))",gap:16}}>
+        {[
+          {icon:"🗺️",title:"Transfer Partner Map",desc:"Visual map of credit card → airline transfer partnerships"},
+          {icon:"💰",title:"Points Portfolio",desc:"Connect accounts and see your total points value"},
+          {icon:"🔔",title:"Fare Alerts",desc:"Get notified when award space opens on your routes"},
+          {icon:"🧮",title:"Miles Calculator",desc:"Calculate any redemption value before booking"},
+          {icon:"📊",title:"Historical Pricing",desc:"Track how award prices change over time"},
+          {icon:"🌍",title:"Route Explorer",desc:"Best routes from your home airport by value"},
+        ].map((t,i)=>(
+          <div key={i} style={{background:"#fff",borderRadius:14,padding:22,border:"1px solid #e8eaef",position:"relative",transition:"all 0.2s"}}
+            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.06)";}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+            <span style={{position:"absolute",top:14,right:14,background:"#f3f4f6",color:s.muted,fontSize:9,fontWeight:700,padding:"3px 8px",borderRadius:4,letterSpacing:"0.5px"}}>COMING SOON</span>
+            <div style={{fontSize:34,marginBottom:12}}>{t.icon}</div>
+            <div style={{fontSize:15,fontWeight:700,color:s.navy,marginBottom:6}}>{t.title}</div>
+            <div style={{fontSize:13,color:s.muted,lineHeight:1.5}}>{t.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ═══════════ RENDER ═══════════
+  return (
+    <div style={{minHeight:"100vh",background:s.bg,fontFamily:"'Manrope',system-ui,sans-serif",color:s.text}}>
+      {Nav()}
+      {tab==="search" && (phase==="home"?Home():phase==="parsing"?Parsing():phase==="searching"?Searching():Results())}
+      {tab==="manual" && ManualSearch()}
+      {tab==="sweetspots" && SweetSpotsTab()}
+      {tab==="devaluations" && DevaluationsTab()}
+      {tab==="tools" && ToolsTab()}
+    </div>
+  );
+}
