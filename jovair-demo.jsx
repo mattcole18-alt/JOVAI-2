@@ -241,6 +241,12 @@ const AIRPORTS = [
   { code:"CAN", city:"Guangzhou", name:"Guangzhou Baiyun Intl", country:"China", region:"CAN", lat:23.39, lon:113.31 },
   { code:"PUS", city:"Busan", name:"Gimhae Intl", country:"South Korea", region:"PUS", lat:35.18, lon:128.94 },
   { code:"CMB", city:"Colombo", name:"Bandaranayake Intl", country:"Sri Lanka", region:"CMB", lat:7.18, lon:80.78 },
+  { code:"MLE", city:"Male", name:"Velana Intl", country:"Maldives", region:"MLE", lat:4.19, lon:73.53 },
+  { code:"CTG", city:"Cartagena", name:"Rafael Nunez Intl", country:"Colombia", region:"CTG", lat:10.44, lon:-75.51 },
+  { code:"BGW", city:"Baghdad", name:"Baghdad Intl", country:"Iraq", region:"BGW", lat:33.26, lon:44.23 },
+  { code:"MHT", city:"Manchester", name:"Manchester-Boston Regional", country:"US", region:"MHT", lat:42.93, lon:-71.44 },
+  { code:"CRW", city:"Charleston", name:"Yeager Airport", country:"US", region:"CRW", lat:38.37, lon:-81.59 },
+  { code:"JAN", city:"Jackson", name:"Jackson-Medgar Wiley Evers Intl", country:"US", region:"JAN", lat:32.31, lon:-90.08 },
   { code:"DAC", city:"Dhaka", name:"Hazrat Shahjalal Intl", country:"Bangladesh", region:"DAC", lat:23.81, lon:90.33 },
   { code:"TAS", city:"Tashkent", name:"Tashkent Intl", country:"Uzbekistan", region:"TAS", lat:41.26, lon:69.28 },
   // Europe (additional)
@@ -826,16 +832,22 @@ const CITY_MAP = {
   "baltimore":["BWI"],"bwi":["BWI"],"sacramento":["SMF"],"oakland":["OAK"],"san jose":["SJC"],"burbank":["BUR"],"santa ana":["SNA"],"orange county":["SNA"],"john wayne":["SNA"],"ontario":["ONT"],"fort myers":["RSW"],"west palm beach":["PBI"],"palm beach":["PBI"],"jacksonville":["JAX"],"jax":["JAX"],"memphis":["MEM"],"indianapolis":["IND"],"indy":["IND"],"columbus":["CMH"],"cleveland":["CLE"],"cincinnati":["CVG"],"milwaukee":["MKE"],"albuquerque":["ABQ"],"boise":["BOI"],"anchorage":["ANC"],"alaska":["ANC"],"maui":["OGG"],"kona":["KOA"],
   // US — smaller but common destinations
   "savannah":["SAV"],"charleston":["CHS"],"myrtle beach":["MYR"],"key west":["EYW"],"pensacola":["PNS"],"destin":["VPS"],"panama city beach":["ECP"],"sarasota":["SRQ"],"daytona":["DAB"],"hilton head":["HHH"],"asheville":["AVL"],"knoxville":["TYS"],"lexington":["LEX"],"louisville":["SDF"],"richmond":["RIC"],"norfolk":["ORF"],"virginia beach":["ORF"],"buffalo":["BUF"],"rochester":["ROC"],"syracuse":["SYR"],"albany":["ALB"],"hartford":["BDL"],"providence":["PVD"],"portland maine":["PWM"],"burlington":["BTV"],"omaha":["OMA"],"kansas city":["MCI"],"kc":["MCI"],"des moines":["DSM"],"madison":["MSN"],"grand rapids":["GRR"],"tucson":["TUS"],"el paso":["ELP"],"reno":["RNO"],"spokane":["GEG"],"bozeman":["BZN"],"jackson hole":["JAC"],"aspen":["ASE"],"vail":["EGE"],"palm springs":["PSP"],"santa barbara":["SBA"],"monterey":["MRY"],"fresno":["FAT"],"bakersfield":["BFL"],"little rock":["LIT"],"oklahoma city":["OKC"],"tulsa":["TUL"],"wichita":["ICT"],"birmingham":["BHM"],"huntsville":["HSV"],"mobile":["MOB"],"greenville":["GSP"],"columbia":["CAE"],"wilmington":["ILM"],"fayetteville":["XNA"],"northwest arkansas":["XNA"],"bentonville":["XNA"],"harrisburg":["MDT"],"scranton":["AVP"],"pittsfield":["PIT"],"south bend":["SBN"],"sioux falls":["FSD"],"fargo":["FAR"],"bismarck":["BIS"],"rapid city":["RAP"],"missoula":["MSO"],"billings":["BIL"],"eugene":["EUG"],"bend":["RDM"],"redmond":["RDM"],"bellingham":["BLI"],"santa fe":["SAF"],"colorado springs":["COS"],"steamboat springs":["HDN"],"sun valley":["SUN"],"martha's vineyard":["MVY"],"nantucket":["ACK"],"cape cod":["HYA"],
+  // US — state names → major airports in that state
+  "florida":["MIA","FLL","TPA","MCO","JAX"],"california":["LAX","SFO","SAN","SNA","OAK","SJC","SMF"],"texas":["DFW","IAH","AUS","SAT","HOU","ELP"],"new jersey":["EWR"],"jersey":["EWR"],"connecticut":["BDL"],"massachusetts":["BOS"],"georgia":["ATL"],"illinois":["ORD","MDW"],"pennsylvania":["PHL","PIT"],"ohio":["CLE","CMH","CVG"],"michigan":["DTW","GRR"],"minnesota":["MSP"],"colorado":["DEN","COS","ASE"],"arizona":["PHX","TUS"],"nevada":["LAS","RNO"],"oregon":["PDX","EUG"],"tennessee":["BNA","MEM","TYS"],"north carolina":["CLT","RDU","GSP"],"south carolina":["CHS","MYR","CAE"],"virginia":["IAD","DCA","RIC","ORF"],"maryland":["BWI"],"louisiana":["MSY"],"missouri":["STL","MCI"],"wisconsin":["MKE","MSN"],"indiana":["IND"],"kentucky":["SDF","CVG","LEX"],"alabama":["BHM","HSV","MOB"],"oklahoma":["OKC","TUL"],"arkansas":["LIT","XNA"],"utah":["SLC"],"idaho":["BOI"],"montana":["BZN","MSO","BIL"],"wyoming":["JAC"],"new mexico":["ABQ","SAF"],"north dakota":["FAR","BIS"],"south dakota":["FSD","RAP"],"nebraska":["OMA"],"iowa":["DSM"],"mississippi":["JAN"],"maine":["PWM"],"vermont":["BTV"],"rhode island":["PVD"],"new hampshire":["MHT"],"west virginia":["CRW"],
+  // US — common airport name aliases
+  "jfk":["JFK"],"kennedy":["JFK"],"laguardia":["LGA"],"la guardia":["LGA"],"ohare":["ORD"],"o'hare":["ORD"],"midway":["MDW"],"dulles":["IAD"],"reagan":["DCA"],"national":["DCA"],"hobby":["HOU"],"love field":["DAL"],"logan":["BOS"],"sky harbor":["PHX"],"hartsfield":["ATL"],"seatac":["SEA"],"sea-tac":["SEA"],
+  // US — region/area slang
+  "east coast":["JFK","BOS","PHL","DCA","MIA","ATL"],"west coast":["LAX","SFO","SEA","PDX","SAN"],"midwest":["ORD","DTW","MSP","STL","MCI","CLE"],"south":["ATL","MIA","DFW","IAH","BNA","MSY"],"northeast":["JFK","BOS","PHL","DCA","BWI"],"southeast":["ATL","MIA","CLT","TPA","MCO"],"southwest":["PHX","LAS","DEN","AUS","DFW"],"pacific northwest":["SEA","PDX"],"pnw":["SEA","PDX"],"socal":["LAX","SNA","SAN","ONT","BUR"],"norcal":["SFO","OAK","SJC","SMF"],"tri-state":["JFK","EWR","LGA"],"tristate":["JFK","EWR","LGA"],
   // Europe
-  "london":["LHR","LGW"],"lhr":["LHR"],"england":["LHR","LGW","MAN"],"uk":["LHR","LGW","MAN","EDI"],"united kingdom":["LHR","LGW","MAN","EDI"],"britain":["LHR","LGW","MAN","EDI"],"paris":["CDG","ORY"],"cdg":["CDG"],"france":["CDG","ORY","LYS","MRS","NCE"],"frankfurt":["FRA"],"germany":["FRA","MUC","BER"],"amsterdam":["AMS"],"netherlands":["AMS"],"holland":["AMS"],"rome":["FCO"],"italy":["FCO","MXP","VCE","NAP"],"barcelona":["BCN"],"spain":["MAD","BCN","AGP","PMI"],"lisbon":["LIS"],"portugal":["LIS","OPO"],"istanbul":["IST","SAW"],"turkey":["IST","SAW","AYT"],"athens":["ATH"],"greece":["ATH","JTR","HER","CFU","SKG"],"zurich":["ZRH"],"switzerland":["ZRH","GVA"],"geneva":["GVA"],"madrid":["MAD"],"munich":["MUC"],"brussels":["BRU"],"belgium":["BRU"],"vienna":["VIE"],"austria":["VIE","SZG"],"dublin":["DUB"],"ireland":["DUB"],"warsaw":["WAW"],"poland":["WAW","KRK","GDN","WRO"],"krakow":["KRK"],"stockholm":["ARN"],"sweden":["ARN"],"copenhagen":["CPH"],"denmark":["CPH"],"oslo":["OSL"],"norway":["OSL","BGO"],"helsinki":["HEL"],"finland":["HEL"],"prague":["PRG"],"czech republic":["PRG"],"czechia":["PRG"],"budapest":["BUD"],"hungary":["BUD"],"bucharest":["OTP"],"romania":["OTP"],"berlin":["BER"],"milan":["MXP","BGY"],"naples":["NAP"],"venice":["VCE"],"nice":["NCE"],"edinburgh":["EDI"],"manchester":["MAN"],"bergen":["BGO"],"reykjavik":["KEF"],"iceland":["KEF"],"scotland":["EDI","GLA"],"lyon":["LYS"],"marseille":["MRS"],"split":["SPU"],"croatia":["ZAG","SPU","DBV"],"dubrovnik":["DBV"],"riga":["RIX"],"latvia":["RIX"],"vilnius":["VNO"],"lithuania":["VNO"],"tallinn":["TLL"],"estonia":["TLL"],"glasgow":["GLA"],"antalya":["AYT"],"salzburg":["SZG"],"tenerife":["TFS"],"seville":["SVQ"],"porto":["OPO"],"thessaloniki":["SKG"],"santorini":["JTR"],"corfu":["CFU"],"crete":["HER"],"heraklion":["HER"],"palma":["PMI"],"mallorca":["PMI"],"malaga":["AGP"],"sicily":["CTA","PMO"],"catania":["CTA"],"palermo":["PMO"],"sofia":["SOF"],"bulgaria":["SOF"],"zagreb":["ZAG"],"belgrade":["BEG"],"serbia":["BEG"],"gdansk":["GDN"],"wroclaw":["WRO"],"mykonos":["JMK"],"santorini":["JTR"],"rhodes":["RHO"],"europe":["LHR","CDG","FRA","AMS","FCO","BCN","LIS","MAD","MUC","VIE","PRG","BER","DUB"],
-  // Asia
-  "tokyo":["NRT","HND"],"japan":["NRT","HND","KIX"],"osaka":["KIX"],"fukuoka":["FUK"],"sapporo":["CTS"],"singapore":["SIN"],"hong kong":["HKG"],"seoul":["ICN"],"korea":["ICN"],"bangkok":["BKK"],"thailand":["BKK","CNX","HKT"],"phuket":["HKT"],"chiang mai":["CNX"],"dubai":["DXB"],"doha":["DOH"],"qatar":["DOH"],"sydney":["SYD"],"australia":["SYD","MEL","BNE"],"melbourne":["MEL"],"brisbane":["BNE"],"perth":["PER"],"delhi":["DEL"],"india":["DEL","BOM","BLR"],"mumbai":["BOM"],"bangalore":["BLR"],"hyderabad":["HYD"],"chennai":["MAA"],"kochi":["COK"],"taipei":["TPE"],"taiwan":["TPE"],"shanghai":["PVG","SHA"],"beijing":["PEK"],"china":["PVG","PEK","CAN"],"guangzhou":["CAN"],"shenzhen":["SZX"],"hangzhou":["HGH"],"kuala lumpur":["KUL"],"malaysia":["KUL","PEN"],"jakarta":["CGK"],"bali":["DPS"],"indonesia":["CGK","DPS"],"manila":["MNL"],"philippines":["MNL","CEB"],"cebu":["CEB"],"ho chi minh":["SGN"],"saigon":["SGN"],"hanoi":["HAN"],"vietnam":["SGN","HAN","DAD"],"da nang":["DAD"],"cambodia":["PNH","REP"],"phnom penh":["PNH"],"siem reap":["REP"],"yangon":["RGN"],"myanmar":["RGN"],"nepal":["KTM"],"kathmandu":["KTM"],"pakistan":["ISB","KHI","LHE"],"islamabad":["ISB"],"karachi":["KHI"],"lahore":["LHE"],"colombo":["CMB"],"sri lanka":["CMB"],"asia":["NRT","HND","SIN","HKG","ICN","BKK","DEL","TPE","KUL"],
+  "london":["LHR","LGW"],"lhr":["LHR"],"england":["LHR","LGW","MAN"],"uk":["LHR","LGW","MAN","EDI"],"united kingdom":["LHR","LGW","MAN","EDI"],"britain":["LHR","LGW","MAN","EDI"],"paris":["CDG","ORY"],"cdg":["CDG"],"france":["CDG","ORY","LYS","MRS","NCE"],"frankfurt":["FRA"],"germany":["FRA","MUC","BER"],"amsterdam":["AMS"],"netherlands":["AMS"],"holland":["AMS"],"rome":["FCO"],"italy":["FCO","MXP","VCE","NAP"],"barcelona":["BCN"],"spain":["MAD","BCN","AGP","PMI"],"lisbon":["LIS"],"portugal":["LIS","OPO"],"istanbul":["IST","SAW"],"turkey":["IST","SAW","AYT"],"athens":["ATH"],"greece":["ATH","JTR","HER","CFU","SKG"],"zurich":["ZRH"],"switzerland":["ZRH","GVA"],"geneva":["GVA"],"madrid":["MAD"],"munich":["MUC"],"brussels":["BRU"],"belgium":["BRU"],"vienna":["VIE"],"austria":["VIE","SZG"],"dublin":["DUB"],"ireland":["DUB"],"warsaw":["WAW"],"poland":["WAW","KRK","GDN","WRO"],"krakow":["KRK"],"stockholm":["ARN"],"sweden":["ARN"],"copenhagen":["CPH"],"denmark":["CPH"],"oslo":["OSL"],"norway":["OSL","BGO"],"helsinki":["HEL"],"finland":["HEL"],"prague":["PRG"],"czech republic":["PRG"],"czechia":["PRG"],"budapest":["BUD"],"hungary":["BUD"],"bucharest":["OTP"],"romania":["OTP"],"berlin":["BER"],"milan":["MXP","BGY"],"naples":["NAP"],"venice":["VCE"],"nice":["NCE"],"edinburgh":["EDI"],"manchester":["MAN"],"bergen":["BGO"],"reykjavik":["KEF"],"iceland":["KEF"],"scotland":["EDI","GLA"],"lyon":["LYS"],"marseille":["MRS"],"split":["SPU"],"croatia":["ZAG","SPU","DBV"],"dubrovnik":["DBV"],"riga":["RIX"],"latvia":["RIX"],"vilnius":["VNO"],"lithuania":["VNO"],"tallinn":["TLL"],"estonia":["TLL"],"glasgow":["GLA"],"antalya":["AYT"],"salzburg":["SZG"],"tenerife":["TFS"],"seville":["SVQ"],"porto":["OPO"],"thessaloniki":["SKG"],"santorini":["JTR"],"corfu":["CFU"],"crete":["HER"],"heraklion":["HER"],"palma":["PMI"],"mallorca":["PMI"],"malaga":["AGP"],"sicily":["CTA","PMO"],"catania":["CTA"],"palermo":["PMO"],"sofia":["SOF"],"bulgaria":["SOF"],"zagreb":["ZAG"],"belgrade":["BEG"],"serbia":["BEG"],"gdansk":["GDN"],"wroclaw":["WRO"],"mykonos":["JMK"],"mikonos":["JMK"],"rhodes":["RHO"],"europe":["LHR","CDG","FRA","AMS","FCO","BCN","LIS","MAD","MUC","VIE","PRG","BER","DUB"],"western europe":["LHR","CDG","FRA","AMS","FCO","BCN","MAD"],"eastern europe":["PRG","BUD","WAW","OTP","BEG","SOF","ZAG"],"scandinavia":["ARN","CPH","OSL","HEL"],"nordic":["ARN","CPH","OSL","HEL","KEF"],"baltics":["RIX","VNO","TLL"],"balkans":["ATH","BEG","SOF","ZAG","DBV"],
+  // Asia — with common typos and alternate names
+  "tokyo":["NRT","HND"],"japan":["NRT","HND","KIX"],"osaka":["KIX"],"fukuoka":["FUK"],"sapporo":["CTS"],"singapore":["SIN"],"hong kong":["HKG"],"hongkong":["HKG"],"seoul":["ICN"],"korea":["ICN"],"south korea":["ICN"],"bangkok":["BKK"],"thailand":["BKK","CNX","HKT"],"phuket":["HKT"],"chiang mai":["CNX"],"dubai":["DXB"],"uae":["DXB","AUH"],"emirates":["DXB"],"doha":["DOH"],"qatar":["DOH"],"sydney":["SYD"],"australia":["SYD","MEL","BNE"],"melbourne":["MEL"],"brisbane":["BNE"],"perth":["PER"],"delhi":["DEL"],"new delhi":["DEL"],"india":["DEL","BOM","BLR"],"mumbai":["BOM"],"bombay":["BOM"],"bangalore":["BLR"],"bengaluru":["BLR"],"hyderabad":["HYD"],"chennai":["MAA"],"kochi":["COK"],"taipei":["TPE"],"taiwan":["TPE"],"shanghai":["PVG","SHA"],"beijing":["PEK"],"peking":["PEK"],"china":["PVG","PEK","CAN"],"guangzhou":["CAN"],"shenzhen":["SZX"],"hangzhou":["HGH"],"kuala lumpur":["KUL"],"kl":["KUL"],"malaysia":["KUL","PEN"],"jakarta":["CGK"],"bali":["DPS"],"indonesia":["CGK","DPS"],"manila":["MNL"],"philippines":["MNL","CEB"],"cebu":["CEB"],"ho chi minh":["SGN"],"saigon":["SGN"],"hanoi":["HAN"],"vietnam":["SGN","HAN","DAD"],"da nang":["DAD"],"cambodia":["PNH","REP"],"phnom penh":["PNH"],"siem reap":["REP"],"yangon":["RGN"],"myanmar":["RGN"],"burma":["RGN"],"nepal":["KTM"],"kathmandu":["KTM"],"pakistan":["ISB","KHI","LHE"],"islamabad":["ISB"],"karachi":["KHI"],"lahore":["LHE"],"colombo":["CMB"],"sri lanka":["CMB"],"maldives":["MLE"],"asia":["NRT","HND","SIN","HKG","ICN","BKK","DEL","TPE","KUL"],"southeast asia":["BKK","SIN","KUL","SGN","MNL","CGK","DPS"],"se asia":["BKK","SIN","KUL","SGN","MNL"],
   // Middle East
-  "abu dhabi":["AUH"],"bahrain":["BAH"],"kuwait":["KWI"],"muscat":["MCT"],"oman":["MCT"],"amman":["AMM"],"jordan":["AMM"],"tel aviv":["TLV"],"israel":["TLV"],"jeddah":["JED"],"riyadh":["RUH"],"saudi":["JED","RUH"],"beirut":["BEY"],"lebanon":["BEY"],"middle east":["DXB","DOH","AUH","JED","RUH"],
+  "abu dhabi":["AUH"],"bahrain":["BAH"],"kuwait":["KWI"],"muscat":["MCT"],"oman":["MCT"],"amman":["AMM"],"jordan":["AMM"],"tel aviv":["TLV"],"israel":["TLV"],"jeddah":["JED"],"riyadh":["RUH"],"saudi":["JED","RUH"],"saudi arabia":["JED","RUH"],"beirut":["BEY"],"lebanon":["BEY"],"iraq":["BGW"],"baghdad":["BGW"],"middle east":["DXB","DOH","AUH","JED","RUH"],
   // Africa
   "cairo":["CAI"],"egypt":["CAI"],"cape town":["CPT"],"johannesburg":["JNB"],"south africa":["JNB","CPT","DUR"],"nairobi":["NBO"],"kenya":["NBO"],"addis ababa":["ADD"],"ethiopia":["ADD"],"lagos":["LOS"],"nigeria":["LOS","ABV"],"accra":["ACC"],"ghana":["ACC"],"casablanca":["CMN"],"morocco":["CMN"],"dar es salaam":["DAR"],"tanzania":["DAR","JRO"],"kilimanjaro":["JRO"],"dakar":["DSS"],"senegal":["DSS"],"mauritius":["MRU"],"durban":["DUR"],"kinshasa":["FIH"],"tunis":["TUN"],"tunisia":["TUN"],"algiers":["ALG"],"africa":["JNB","NBO","ADD","CAI","LOS","CPT"],
   // Americas
-  "toronto":["YYZ"],"vancouver":["YVR"],"montreal":["YUL"],"ottawa":["YOW"],"calgary":["YYC"],"edmonton":["YEG"],"canada":["YYZ","YVR","YUL"],"mexico city":["MEX"],"cancun":["CUN"],"mexico":["MEX","CUN","GDL"],"puerto vallarta":["PVR"],"los cabos":["SJD"],"cabo":["SJD"],"guadalajara":["GDL"],"bogota":["BOG"],"colombia":["BOG","MDE"],"medellin":["MDE"],"lima":["LIM"],"peru":["LIM","CUZ"],"cusco":["CUZ"],"santiago":["SCL"],"chile":["SCL"],"buenos aires":["EZE"],"argentina":["EZE"],"sao paulo":["GRU"],"rio":["GIG"],"brazil":["GRU","GIG","BSB"],"panama":["PTY"],"costa rica":["SJO"],"havana":["HAV"],"cuba":["HAV"],"punta cana":["PUJ"],"dominican":["PUJ"],"jamaica":["MBJ"],"puerto rico":["SJU"],"san juan":["SJU"],"nassau":["NAS"],"bahamas":["NAS"],"aruba":["AUA"],"st maarten":["SXM"],"cayman":["GCM"],"quito":["UIO"],"ecuador":["UIO"],"caracas":["CCS"],"venezuela":["CCS"],"montevideo":["MVD"],"uruguay":["MVD"],"south america":["GRU","GIG","EZE","LIM","SCL","BOG"],
+  "toronto":["YYZ"],"vancouver":["YVR"],"montreal":["YUL"],"ottawa":["YOW"],"calgary":["YYC"],"edmonton":["YEG"],"canada":["YYZ","YVR","YUL"],"mexico city":["MEX"],"cancun":["CUN"],"mexico":["MEX","CUN","GDL"],"tulum":["CUN"],"playa del carmen":["CUN"],"puerto vallarta":["PVR"],"los cabos":["SJD"],"cabo":["SJD"],"guadalajara":["GDL"],"bogota":["BOG"],"colombia":["BOG","MDE"],"medellin":["MDE"],"cartagena":["CTG"],"lima":["LIM"],"peru":["LIM","CUZ"],"cusco":["CUZ"],"machu picchu":["CUZ"],"santiago":["SCL"],"chile":["SCL"],"buenos aires":["EZE"],"argentina":["EZE"],"sao paulo":["GRU"],"rio":["GIG"],"rio de janeiro":["GIG"],"brazil":["GRU","GIG","BSB"],"panama":["PTY"],"panama city":["PTY"],"costa rica":["SJO"],"san jose cr":["SJO"],"havana":["HAV"],"cuba":["HAV"],"punta cana":["PUJ"],"dominican republic":["PUJ"],"dominican":["PUJ"],"dr":["PUJ"],"jamaica":["MBJ"],"montego bay":["MBJ"],"puerto rico":["SJU"],"san juan":["SJU"],"nassau":["NAS"],"bahamas":["NAS"],"aruba":["AUA"],"st maarten":["SXM"],"saint maarten":["SXM"],"sint maarten":["SXM"],"cayman":["GCM"],"cayman islands":["GCM"],"grand cayman":["GCM"],"quito":["UIO"],"ecuador":["UIO"],"caracas":["CCS"],"venezuela":["CCS"],"montevideo":["MVD"],"uruguay":["MVD"],"south america":["GRU","GIG","EZE","LIM","SCL","BOG"],"caribbean":["CUN","PUJ","SJU","MBJ","NAS","AUA","SXM"],"central america":["SJO","PTY","CUN"],
   // Oceania
   "auckland":["AKL"],"new zealand":["AKL","CHC","WLG"],"christchurch":["CHC"],"wellington":["WLG"],"queenstown":["ZQN"],"fiji":["NAN"],"tahiti":["PPT"],"adelaide":["ADL"],"gold coast":["OOL"],
   // Events
@@ -843,6 +855,10 @@ const CITY_MAP = {
 };
 
 function findAirports(q, type) {
+  // Clean input: trim, lowercase, remove extra spaces, strip special chars
+  q = q.toLowerCase().replace(/[^\w\s'-]/g, "").replace(/\s+/g, " ").trim();
+  if (!q || q.length < 2) return null;
+
   // First check for 3-letter airport codes directly in query
   const codeMatch = q.match(/\b([A-Z]{3})\b/gi);
   if (codeMatch) {
@@ -851,18 +867,48 @@ function findAirports(q, type) {
       if (AIRPORTS.find(a=>a.code===up)) return [up];
     }
   }
-  // Then check city/region names — exact match first
-  for (const [key, codes] of Object.entries(CITY_MAP)) {
-    if (q.includes(key)) return codes;
+
+  // Then check city/region names — try multi-word matches first (longest match wins)
+  // This ensures "new york" matches before "new" or "york" individually
+  const sortedKeys = Object.keys(CITY_MAP).sort((a,b) => b.length - a.length);
+  for (const key of sortedKeys) {
+    if (q.includes(key)) return CITY_MAP[key];
   }
+
   // Fuzzy match: check if query words start with or closely match a CITY_MAP key
   const words = q.split(/\s+/).filter(w=>w.length>=3);
-  for (const word of words) {
-    // Check if any city key starts with this word (handles typos like "pittsburg" for "pittsburgh")
-    for (const [key, codes] of Object.entries(CITY_MAP)) {
-      if (key.length >= 4 && (key.startsWith(word) || word.startsWith(key))) return codes;
+  // Also try 2-word combos for cities like "el paso", "des moines"
+  const combos = [];
+  for (let i = 0; i < words.length - 1; i++) combos.push(words[i]+" "+words[i+1]);
+
+  for (const combo of combos) {
+    for (const key of sortedKeys) {
+      if (key.length >= 4 && (key.startsWith(combo) || combo.startsWith(key))) return CITY_MAP[key];
     }
   }
+  for (const word of words) {
+    for (const key of sortedKeys) {
+      if (key.length >= 4 && (key.startsWith(word) || word.startsWith(key))) return CITY_MAP[key];
+    }
+  }
+
+  // Levenshtein-lite: catch 1-char typos for city names 5+ chars (e.g. "mimai" → "miami")
+  for (const word of words) {
+    if (word.length < 4) continue;
+    for (const key of sortedKeys) {
+      if (key.length < 4 || Math.abs(key.length - word.length) > 1) continue;
+      let diff = 0;
+      const shorter = word.length <= key.length ? word : key;
+      const longer = word.length > key.length ? word : key;
+      let j = 0;
+      for (let i = 0; i < longer.length && diff <= 1; i++) {
+        if (shorter[j] === longer[i]) { j++; }
+        else { diff++; if (shorter.length === longer.length) j++; }
+      }
+      if (diff <= 1 && j >= shorter.length - 1) return CITY_MAP[key];
+    }
+  }
+
   // Also try matching against AIRPORTS city names directly
   for (const word of words) {
     const match = AIRPORTS.find(a => a.city && a.city.toLowerCase().includes(word));
@@ -880,50 +926,104 @@ async function parseAI(query) {
     if (!r.ok) throw new Error("API error");
     return await r.json();
   } catch(e) {
-    const q = query.toLowerCase();
+    // Clean input: normalize whitespace, handle special chars, lowercase
+    let q = query.toLowerCase().replace(/[^\w\s'-]/g, " ").replace(/\s+/g, " ").trim();
+
+    // Handle empty or gibberish queries — show popular routes instead of crashing
+    if (!q || q.length < 2) {
+      return {origins:["JFK","LAX","SFO"],destinations:["LHR","CDG","NRT","FCO"],cabin:"Economy",alliance:"any",program:null,dateRange:"Flexible",dateWindow:{},maxMiles:null,isExplore:true,summary:"Popular flights"};
+    }
+
     let cabin = /\b(?:business|biz|j class)\b/.test(q)?"Business":/\b(?:first|f class|suites)\b/.test(q)?"First":/\b(?:premium economy|premium eco|pe class)\b/.test(q)?"Premium Economy":"Economy";
     for (const c of ["first","business","premium economy","economy"]) if(q.includes(c)){cabin=c.charAt(0).toUpperCase()+c.slice(1);break;}
     let alliance="any";
     if(q.includes("star alliance"))alliance="Star Alliance"; else if(q.includes("oneworld"))alliance="oneworld"; else if(q.includes("skyteam"))alliance="SkyTeam"; else if(q.includes("budget"))alliance="Budget";
+
+    // Strip noise words BEFORE location detection so they don't interfere
+    const noiseWords = /\b(?:find|me|a|an|the|some|any|i want|i need|show|get|search|looking for|look for|can you|please|help|need|want|cheap|cheapest|affordable|expensive|luxury|flight|flights|ticket|tickets|booking|book|best|good|great|deal|deals|round trip|roundtrip|one way|oneway|nonstop|non-stop|direct)\b/g;
+
     // Smart origin/destination detection
     let origins=null, dests=null;
 
     // Step 1: Try "from X to Y" pattern first (most explicit)
-    // Terminators: date/time words, prepositions, event/timing phrases, or end of string
     const fromTo = q.match(/from\s+(.+?)\s+to\s+(.+?)(?:\s+(?:in|on|using|for|under|around|before|right|just|after|during|next|this|between|by|within|until)\b|\s*$)/);
     if (fromTo) {
       origins = findAirports(fromTo[1].trim(), "origin");
       dests = findAirports(fromTo[2].trim(), "dest");
     }
-    // Step 2: Try "X to Y" pattern (greedy on destination to capture full city names)
+
+    // Step 2: Try "X to Y" pattern
     if (!origins || !dests) {
       const xToY = q.match(/(.+?)\s+to\s+(.+?)(?:\s+(?:in|on|using|for|under|around|before|right|just|after|during|next|this|between|by|within|until)\b|\s*$)/);
       if (xToY) {
         if (!origins) origins = findAirports(xToY[1].trim(), "origin");
         if (!dests) dests = findAirports(xToY[2].trim(), "dest");
       }
-      // If still no dest, try greedy capture after "to" (handles "X to Y" at end of string)
       if (!dests) {
         const xToYGreedy = q.match(/\bto\s+(.+)$/);
         if (xToYGreedy) dests = findAirports(xToYGreedy[1].trim(), "dest");
       }
     }
+
+    // Step 2.5: Try "X - Y" or "X → Y" or "X > Y" patterns (people use dashes/arrows)
+    if (!origins || !dests) {
+      const dashPattern = q.match(/(.+?)\s*[-–—>→]\s*(.+?)(?:\s+(?:in|on|using|for)\b|\s*$)/);
+      if (dashPattern) {
+        if (!origins) origins = findAirports(dashPattern[1].trim(), "origin");
+        if (!dests) dests = findAirports(dashPattern[2].trim(), "dest");
+      }
+    }
+
     // Step 3: Detect origins from "from X", "out of X", "departing X"
     if (!origins) {
-      const outOf = q.match(/(?:out of|from|departing|leaving)\s+(\w[\w\s]*?)(?:\s+to|\s+in|\s+on|\s+before|\s+after|\s*$)/);
-      if (outOf) origins = findAirports(outOf[1].trim().toLowerCase(), "origin");
+      const outOf = q.match(/(?:out of|from|departing|leaving|flying out of)\s+(\w[\w\s]*?)(?:\s+to|\s+in|\s+on|\s+before|\s+after|\s*$)/);
+      if (outOf) origins = findAirports(outOf[1].trim(), "origin");
     }
-    // Step 4: Scan query for destinations, but remove origin-related words first
-    if (!dests) {
-      let destQ = q;
-      // Remove origin phrases so origin city doesn't become destination
-      destQ = destQ.replace(/(?:from|out of|departing|leaving)\s+[\w\s]+?(?=\s+to\b|\s+in\b|\s+on\b|\s*$)/g, "");
-      // Remove common non-location words
-      destQ = destQ.replace(/\b(?:find|me|a|cheap|budget|affordable|expensive|luxury|flight|flights|ticket|tickets|booking|book|get|show|best|good|great|deal|deals)\b/g, "");
-      destQ = destQ.trim();
-      if (destQ.length > 1) dests = findAirports(destQ, "dest");
+
+    // Step 4: NO "to" keyword — try to find TWO locations in the query
+    // Handles: "miami london", "philly jacksonville", "JFK LAX"
+    if (!origins || !dests) {
+      const cleanQ = q.replace(noiseWords, " ").replace(/\s+/g, " ").trim();
+      const locationWords = cleanQ.split(/\s+/);
+
+      // Try progressively splitting the cleaned query to find two locations
+      // Try each split point: first N words = origin, remaining = dest
+      for (let split = 1; split < locationWords.length && (!origins || !dests); split++) {
+        const leftPart = locationWords.slice(0, split).join(" ");
+        const rightPart = locationWords.slice(split).join(" ");
+        const tryOrig = findAirports(leftPart, "origin");
+        const tryDest = findAirports(rightPart, "dest");
+        if (tryOrig && tryDest) {
+          // Make sure they're different
+          const oSet = new Set(tryOrig);
+          const different = tryDest.some(d => !oSet.has(d));
+          if (different) {
+            if (!origins) origins = tryOrig;
+            if (!dests) dests = tryDest;
+          }
+        }
+      }
     }
-    // Step 5: Default fallbacks
+
+    // Step 5: Single location — treat as destination, use popular origins
+    if (!origins && !dests) {
+      const cleanQ = q.replace(noiseWords, " ").replace(/\s+/g, " ").trim();
+      const singleLoc = findAirports(cleanQ, "dest");
+      if (singleLoc) {
+        dests = singleLoc;
+        origins = ["JFK","LAX","SFO","ORD"]; // popular US origins
+      }
+    }
+    if (origins && !dests) {
+      // Only found origin — show popular international destinations from there
+      dests = ["LHR","CDG","FCO","NRT","CUN","SIN"];
+    }
+    if (!origins && dests) {
+      // Only found destination — use popular US origins
+      origins = ["JFK","LAX","SFO","ORD"];
+    }
+
+    // Step 6: Default fallbacks (truly nothing matched)
     if (!origins) origins = ["JFK","EWR","LGA"];
     if (!dests) dests = ["LHR","CDG","NRT","SIN","BKK","DXB"];
     // Ensure origins and dests don't overlap (prevents NYC→NYC type results)
