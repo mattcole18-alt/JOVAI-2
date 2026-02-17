@@ -100,6 +100,14 @@ const AIRLINES = [
   { code:"LA", name:"LATAM", program:"Frequent Flyer", alliance:"Independent", color:"#000000", transfers:["Chase UR","Citi TYP"], routes:US|EU|SA|OC, type:"full-service" },
   // Oceania
   { code:"QF", name:"Qantas", program:"Frequent Flyer", alliance:"oneworld", color:"#E0002A", transfers:[], routes:US|EU|AS|OC|DOM_AS, type:"full-service" },
+  // Low-cost long-haul — the deal-finders' favorites
+  { code:"YP", name:"Air Premia", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:US|AS|DOM_AS, type:"lowcost-longhaul" },
+  { code:"ZG", name:"ZIPAIR", program:null, alliance:"Budget", color:"#000000", transfers:[], routes:US|AS|DOM_AS, type:"lowcost-longhaul" },
+  { code:"BF", name:"French Bee", program:null, alliance:"Budget", color:"#FF6B00", transfers:[], routes:US|EU, type:"lowcost-longhaul" },
+  { code:"DE", name:"Condor", program:null, alliance:"Budget", color:"#FFD700", transfers:[], routes:US|EU, type:"lowcost-longhaul" },
+  { code:"Z0", name:"Norse Atlantic", program:null, alliance:"Budget", color:"#FF0000", transfers:[], routes:US|EU, type:"lowcost-longhaul" },
+  { code:"OG", name:"PLAY", program:null, alliance:"Budget", color:"#FFD700", transfers:[], routes:US|EU, type:"lowcost-longhaul" },
+  { code:"H9", name:"Himalaya Airlines", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:AS|ME, type:"lowcost-longhaul" },
   // Budget — US domestic
   { code:"NK", name:"Spirit Airlines", program:null, alliance:"Budget", color:"#FFD700", transfers:[], routes:DOM_US|CA, type:"budget" },
   { code:"F9", name:"Frontier Airlines", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:DOM_US|CA, type:"budget" },
@@ -116,47 +124,34 @@ const AIRLINES = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// AIRLINE BOOKING URLS — deep-links to each airline's booking page
+// BOOKING URL — direct links to airline booking pages
 // ═══════════════════════════════════════════════════════════════
 
-const BOOKING_URLS = {
-  UA: (o,d,dt) => `https://www.united.com/en/us/fsr/choose-flights?f=${o}&t=${d}&d=${dt}&tt=1&at=1&sc=7&px=1&taxng=1&newHP=True&clm=7&st=bestmatches&tqp=R`,
-  AA: (o,d,dt) => `https://www.aa.com/booking/find-flights?origin=${o}&destination=${d}&departureDate=${dt}&tripType=oneWay&passengers=1`,
-  DL: (o,d,dt) => `https://www.delta.com/flight-search/search?originCity=${o}&destinationCity=${d}&departureDate=${dt}&paxCount=1`,
-  AC: (o,d,dt) => `https://www.aircanada.com/booking/search?org0=${o}&dest0=${d}&departure0=${dt}&ADT=1&lang=en-CA`,
-  BA: (o,d,dt) => `https://www.britishairways.com/travel/book/public/en_us?from=${o}&to=${d}&depDate=${dt}`,
-  LH: (o,d,dt) => `https://www.lufthansa.com/us/en/flight-search?origin=${o}&destination=${d}&outboundDate=${dt}`,
-  AF: (o,d,dt) => `https://www.airfrance.us/search/offer?origin=${o}&destination=${d}&outboundDate=${dt}`,
-  TK: (o,d,dt) => `https://www.turkishairlines.com/en-us/flights/?origin=${o}&destination=${d}&date=${dt}`,
-  EK: (o,d,dt) => `https://www.emirates.com/us/english/book/?origin=${o}&destination=${d}&departing=${dt}`,
-  QR: (o,d,dt) => `https://www.qatarairways.com/en/booking.html?widget=QR&origin=${o}&destination=${d}&departing=${dt}&pax=1`,
-  SQ: (o,d,dt) => `https://www.singaporeair.com/en_UK/ppsclub-krisflyer/flightsearch/?from=${o}&to=${d}&departDate=${dt}`,
-  NH: (o,d,dt) => `https://www.ana.co.jp/en/us/book-plan/search/international/?route=${o}${d}&departureDate=${dt}`,
-  CX: (o,d,dt) => `https://www.cathaypacific.com/cx/en_US/book-a-trip/flight-search.html?origin=${o}&destination=${d}&departDate=${dt}`,
-  JL: (o,d,dt) => `https://www.jal.co.jp/en/inter/booking/?origin=${o}&dest=${d}&depDate=${dt}`,
-  VS: (o,d,dt) => `https://www.virginatlantic.com/flight-search/select-flights?origin=${o}&destination=${d}&departureDate=${dt}`,
-  AS: (o,d,dt) => `https://www.alaskaair.com/search?org=${o}&des=${d}&dep=${dt}`,
-  B6: (o,d,dt) => `https://www.jetblue.com/booking/flights?from=${o}&to=${d}&depart=${dt}`,
-  ET: (o,d,dt) => `https://www.ethiopianairlines.com/book?origin=${o}&destination=${d}&departureDate=${dt}`,
-  LA: (o,d,dt) => `https://www.latamairlines.com/us/en/booking?origin=${o}&destination=${d}&departDate=${dt}`,
-  QF: (o,d,dt) => `https://www.qantas.com/us/en/book-a-trip/flights.html?from=${o}&to=${d}&date=${dt}`,
-  KE: (o,d,dt) => `https://www.koreanair.com/booking/search?tripType=OW&origin=${o}&destination=${d}&departDate=${dt}`,
+const AIRLINE_WEBSITES = {
+  UA: "united.com", AA: "aa.com", DL: "delta.com", AS: "alaskaair.com",
+  B6: "jetblue.com", HA: "hawaiianairlines.com", AC: "aircanada.com",
+  LH: "lufthansa.com", BA: "britishairways.com", AF: "airfrance.us",
+  VS: "virginatlantic.com", LX: "swiss.com", SK: "flysas.com",
+  IB: "iberia.com", AY: "finnair.com", TK: "turkishairlines.com",
+  SQ: "singaporeair.com", NH: "ana.co.jp", CX: "cathaypacific.com",
+  JL: "jal.co.jp", KE: "koreanair.com", BR: "evaair.com",
+  CI: "china-airlines.com", CA: "airchina.com", AI: "airindia.com",
+  MH: "malaysiaairlines.com", EK: "emirates.com", QR: "qatarairways.com",
+  ET: "ethiopianairlines.com", LA: "latamairlines.com", QF: "qantas.com",
+  NK: "spirit.com", F9: "flyfrontier.com", WN: "southwest.com",
+  FR: "ryanair.com", U2: "easyjet.com", W6: "wizzair.com",
+  DY: "norwegian.com", VY: "vueling.com", WS: "westjet.com",
+  MX: "flybreeze.com",
+  YP: "airpremia.com", ZG: "zipair.net", BF: "frenchbee.com",
+  DE: "condor.com", Z0: "flynorse.com", OG: "flyplay.com",
 };
 
-function getBookingUrl(airlineCode, origin, dest, depDateObj) {
-  let dt = "";
-  if (depDateObj) {
-    try {
-      const d = depDateObj instanceof Date ? depDateObj : new Date(depDateObj);
-      if (!isNaN(d.getTime())) dt = d.toISOString().slice(0, 10);
-    } catch(_) {}
-  }
-  const builder = BOOKING_URLS[airlineCode];
-  if (builder) return builder(origin, dest, dt);
-  // Fallback: search airline website for the route
+function getBookingUrl(airlineCode, origin, dest) {
+  const site = AIRLINE_WEBSITES[airlineCode];
+  if (site) return `https://www.${site}`;
+  // Fallback for unknown airlines
   const al = AIRLINES.find(a => a.code === airlineCode);
-  const name = al ? al.name.split(" ")[0].toLowerCase() : airlineCode.toLowerCase();
-  return `https://www.google.com/search?q=${encodeURIComponent(`${al?.name || airlineCode} book flight ${origin} to ${dest}`)}`;
+  return `https://www.${(al?.name||"").toLowerCase().replace(/[^a-z]/g,"")}.com`;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -474,19 +469,39 @@ const DEVALUATIONS = [
   { program:"AAdvantage", airline:"AA", date:"2025", desc:'Web specials removed. Partner charts show "starting at" pricing — effectively dynamic pricing.', severity:"MODERATE", color:"#f5a623" },
 ];
 
-const ALLIANCE_COLORS = { "Star Alliance":"#cfb53b", "oneworld":"#e5384f", "SkyTeam":"#003A70", "Independent":"#888" };
+const ALLIANCE_COLORS = { "Star Alliance":"#cfb53b", "oneworld":"#e5384f", "SkyTeam":"#003A70", "Independent":"#888", "Budget":"#FF8C00" };
+
+// Airline logo URL — uses pics.avs.io (free, reliable, used by major travel sites)
+// Returns a square PNG logo for any IATA airline code
+function airlineLogo(code, size=80) {
+  return `https://pics.avs.io/${size}/${size}/${code}@2x.png`;
+}
+
+// Logo component with fallback to colored code box if image fails
+function AirlineLogo({code, color, size=42}) {
+  return (
+    <div style={{width:size,height:size,borderRadius:size>36?10:8,background:"#f8f9fa",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden",border:"1px solid #e8eaef"}}>
+      <img
+        src={airlineLogo(code, size*2)}
+        alt={code}
+        style={{width:size-4,height:size-4,objectFit:"contain"}}
+        onError={(e)=>{e.target.style.display="none";e.target.parentElement.style.background=color||"#666";e.target.parentElement.style.border="none";e.target.parentElement.innerHTML=`<span style="color:#fff;font-size:${Math.round(size*0.3)}px;font-weight:700;font-family:'IBM Plex Mono',monospace">${code}</span>`;}}
+      />
+    </div>
+  );
+}
 const AIRCRAFT = ["Boeing 777-300ER","Boeing 787-9 Dreamliner","Airbus A350-900","Airbus A380-800","Boeing 777-200LR","Airbus A330-900neo","Boeing 787-10","Airbus A350-1000"];
 const FARE_CLASSES = { Economy:["Y","B","M","H","Q","V","W"], "Premium Economy":["W","P","E","N"], Business:["J","C","D","Z","I"], First:["F","A","P"] };
 
 const EXAMPLE_QUERIES = [
-  { text:"Cheapest business class out of NYC on Star Alliance miles", icon:"⭐" },
-  { text:"JFK to Lisbon in business class in April 2026", icon:"🇵🇹" },
-  { text:"Best first class to Tokyo using Amex MR points", icon:"🇯🇵" },
-  { text:"NYC to Doha on Qatar Qsuites using AAdvantage miles", icon:"✈️" },
-  { text:"Cheap economy flights from SFO to Europe", icon:"🌍" },
-  { text:"Business class from LAX to Singapore on any alliance", icon:"🇸🇬" },
-  { text:"First class from Miami to London under 80,000 miles", icon:"🇬🇧" },
-  { text:"Best oneworld business class from Chicago to Asia", icon:"🌏" },
+  { text:"Cheapest business class out of NYC on Star Alliance miles" },
+  { text:"JFK to Lisbon in business class in April 2026" },
+  { text:"Best first class to Tokyo using Amex MR points" },
+  { text:"NYC to Doha on Qatar Qsuites using AAdvantage miles" },
+  { text:"Cheap economy flights from SFO to Europe" },
+  { text:"Business class from LAX to Singapore on any alliance" },
+  { text:"First class from Miami to London under 80,000 miles" },
+  { text:"Best oneworld business class from Chicago to Asia" },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -508,10 +523,10 @@ function distMi(a,b) {
 }
 
 function cpmRating(cpm) {
-  if (cpm>=2.0) return {label:"Excellent",color:"#00b4a0",bg:"#e6faf7",emoji:"🔥"};
-  if (cpm>=1.5) return {label:"Good",color:"#3b9e3b",bg:"#eaf5ea",emoji:"👍"};
-  if (cpm>=1.0) return {label:"Fair",color:"#f5a623",bg:"#fef6e6",emoji:"⚖️"};
-  return {label:"Pay Cash",color:"#e5384f",bg:"#fdeaed",emoji:"💵"};
+  if (cpm>=2.0) return {label:"Great Value",color:"#00b4a0",bg:"#e6faf7"};
+  if (cpm>=1.5) return {label:"Strong Redemption",color:"#3b9e3b",bg:"#eaf5ea"};
+  if (cpm>=1.0) return {label:"Fair",color:"#f5a623",bg:"#fef6e6"};
+  return {label:"Pay Cash",color:"#e5384f",bg:"#fdeaed"};
 }
 
 function aiRec(cpm) {
@@ -581,18 +596,13 @@ function generateFlights(parsed) {
     if (alliance==="any") return true;
     return a.alliance.toLowerCase()===alliance.toLowerCase();
   });
-  if (!includeBudget) airlines = airlines.filter(a => a.type!=="budget");
+  if (!includeBudget) airlines = airlines.filter(a => a.type!=="budget" && a.type!=="lowcost-longhaul");
   if (parsed.program) {
     const p = parsed.program.toLowerCase();
     const m = AIRLINES.find(a => a.program&&a.program.toLowerCase().includes(p)||a.name.toLowerCase().includes(p));
     if (m) airlines = [m, ...airlines.filter(a=>a.code!==m.code)];
   }
   if (!airlines.length) airlines = AIRLINES.filter(a=>a.type==="full-service");
-
-  const mR = {Economy:[8000,40000],"Premium Economy":[20000,65000],Business:[30000,120000],First:[50000,180000]};
-  const cR = {Economy:[300,1200],"Premium Economy":[600,2400],Business:[1800,8000],First:[4000,15000]};
-  const [mLo,mHi] = mR[cabin]||mR.Business;
-  const [cLo,cHi] = cR[cabin]||cR.Business;
 
   const results = [];
   const target = rand(10,16);
@@ -610,14 +620,86 @@ function generateFlights(parsed) {
     const dist = distMi(orig,dest);
     // Budget airlines: economy only, shorter routes only
     if (al.type==="budget") {
-      if (cabin!=="Economy") continue;
+      if (cabin!=="Economy" && cabin!=="Premium Economy") continue;
       if (dist > 3500) continue;
     }
+    // Low-cost long-haul: economy + premium economy, longer routes OK
+    if (al.type==="lowcost-longhaul") {
+      if (cabin==="First") continue;
+      if (dist < 2000) continue; // they only fly long-haul
+    }
 
-    const miles = al.type==="budget" ? null : Math.round(rand(mLo,mHi)/500)*500;
+    // DEAL-FOCUSED pricing — Jovair finds the best deals, not average prices
+    // Real examples: Air Premia NYC→Seoul $399 one-way, French Bee SFO→Paris $249
+    // We skew toward the low end because Jovair's whole point is finding deals
+    const isDeal = Math.random() < 0.6; // 60% of results are deal-priced
+    const isLCC = al.type==="budget" || al.type==="lowcost-longhaul";
+    let cash, milesLo, milesHi;
+    if (cabin==="Economy") {
+      if (isLCC) {
+        // Low-cost carriers: genuinely cheap
+        cash = Math.round(dist * rand(0.025, 0.05));
+      } else if (isDeal) {
+        // Deal economy on full-service: discounted fares, sales, error fares
+        cash = Math.round(dist * rand(0.03, 0.06));
+      } else {
+        cash = Math.round(dist * rand(0.04, 0.075));
+      }
+      cash = Math.max(cash, 35);
+    } else if (cabin==="Premium Economy") {
+      if (isLCC) {
+        cash = Math.round(dist * rand(0.035, 0.065));
+      } else if (isDeal) {
+        // Premium economy deals — fly premium for economy prices
+        cash = Math.round(dist * rand(0.04, 0.075));
+      } else {
+        cash = Math.round(dist * rand(0.055, 0.095));
+      }
+      cash = Math.max(cash, 49);
+    } else if (cabin==="Business") {
+      if (isLCC) {
+        // Low-cost long-haul business (e.g. ZIPAIR, Air Premia)
+        cash = Math.round(dist * rand(0.06, 0.12));
+      } else if (isDeal) {
+        // Business deals — the holy grail. 35K miles PRG→NYC type deals
+        cash = Math.round(dist * rand(0.07, 0.15));
+      } else {
+        cash = Math.round(dist * rand(0.10, 0.20));
+      }
+      cash = Math.max(cash, 99);
+    } else {
+      // First class
+      if (isDeal) {
+        cash = Math.round(dist * rand(0.12, 0.25));
+      } else {
+        cash = Math.round(dist * rand(0.18, 0.40));
+      }
+      cash = Math.max(cash, 199);
+    }
+
+    // Miles based on real award charts — skewed toward sweet spots and deals
+    // Real deals: ANA 55K J to Japan, Turkish 45K J to Europe, Virgin 30K PE to London
+    if (dist < 1500) {
+      milesLo = cabin==="Economy"?4500:cabin==="Premium Economy"?7500:cabin==="Business"?8000:15000;
+      milesHi = cabin==="Economy"?12500:cabin==="Premium Economy"?15000:cabin==="Business"?20000:35000;
+    } else if (dist < 4000) {
+      milesLo = cabin==="Economy"?7500:cabin==="Premium Economy"?12500:cabin==="Business"?15000:25000;
+      milesHi = cabin==="Economy"?22500:cabin==="Premium Economy"?30000:cabin==="Business"?45000:65000;
+    } else if (dist < 7000) {
+      // Transatlantic sweet spot — your 35K business PRG→JFK deal lives here
+      milesLo = cabin==="Economy"?12500:cabin==="Premium Economy"?18000:cabin==="Business"?22000:35000;
+      milesHi = cabin==="Economy"?30000:cabin==="Premium Economy"?40000:cabin==="Business"?55000:80000;
+    } else {
+      // Ultra long-haul — ANA 55K business to Japan, etc.
+      milesLo = cabin==="Economy"?17500:cabin==="Premium Economy"?25000:cabin==="Business"?30000:42000;
+      milesHi = cabin==="Economy"?37500:cabin==="Premium Economy"?47500:cabin==="Business"?65000:95000;
+    }
+
+    const miles = (al.type==="budget" || al.type==="lowcost-longhaul") ? null : Math.round(rand(milesLo,milesHi)/500)*500;
     if (maxMiles && miles && miles > maxMiles) continue;
-    const fees = al.type==="budget" ? 0 : rand(22,186);
-    const cash = al.type==="budget" ? rand(Math.max(80,Math.round(dist*0.06)), Math.round(dist*0.18)) : rand(cLo,cHi);
+    const isLowCost = al.type==="budget" || al.type==="lowcost-longhaul";
+    const fees = isLowCost ? 0 : Math.round(rand(22,160));
+    if (al.type==="budget") cash = Math.round(rand(Math.max(29,dist*0.03), Math.max(59,dist*0.09)));
     const cpm = miles ? +((cash-fees)/miles*100).toFixed(1) : null;
     if (cpm && cpm < 0.3) continue;
     const stops = dist<1500?rand(0,1):dist<4000?rand(0,2):rand(0,2);
@@ -948,6 +1030,7 @@ export default function Jovair() {
   const [filterAlliance, setFilterAlliance] = useState("All");
   const [filterTransfer, setFilterTransfer] = useState(null);
   const [filterNonstop, setFilterNonstop] = useState(false);
+  const [filterMaxPrice, setFilterMaxPrice] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [scanIndex, setScanIndex] = useState(0);
   const [searchHistory, setSearchHistory] = useState([]);
@@ -975,6 +1058,7 @@ export default function Jovair() {
     setFilterAlliance("All");
     setFilterTransfer(null);
     setFilterNonstop(false);
+    setFilterMaxPrice(null);
     setShowHistory(false);
 
     setSearchHistory(prev => {
@@ -996,14 +1080,25 @@ export default function Jovair() {
     // Try real Amadeus API first, fall back to simulated data
     let realFlights = null;
     try {
+      // Ensure departure date is in the future — Amadeus rejects past dates
+      let depDate = p.departureDate || null;
+      let retDate = p.returnDate || null;
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0,10);
+      const futureDefault = new Date(Date.now() + 30*864e5).toISOString().slice(0,10);
+      if (!depDate || depDate < todayStr) depDate = futureDefault;
+      if (retDate && retDate <= depDate) {
+        retDate = new Date(new Date(depDate).getTime() + 7*864e5).toISOString().slice(0,10);
+      }
+
       const res = await fetch("/api/flights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           origins: p.origins,
           destinations: p.destinations,
-          departureDate: p.departureDate || null,
-          returnDate: p.returnDate || null,
+          departureDate: depDate,
+          returnDate: retDate,
           cabin: p.cabin,
           alliance: p.alliance,
           maxResults: 12,
@@ -1018,7 +1113,16 @@ export default function Jovair() {
       console.log("[Jovair] Amadeus unavailable, using simulated data:", err.message);
     }
 
-    setFlights(realFlights || generateFlights(p));
+    // Always generate simulated deal flights, then merge with Amadeus data
+    const simulated = generateFlights(p);
+    if (realFlights && realFlights.length > 0) {
+      // Merge: show Amadeus flights + simulated deals (remove duplicates by airline+route)
+      const seen = new Set(realFlights.map(f=>`${f.airline?.code||""}-${f.origin}-${f.destination}`));
+      const extra = simulated.filter(f=>!seen.has(`${f.airline.code}-${f.origin}-${f.destination}`)).slice(0, 6);
+      setFlights([...realFlights, ...extra].sort((a,b)=>a.cash-b.cash));
+    } else {
+      setFlights(simulated);
+    }
     setPhase("results");
   }, []);
 
@@ -1044,17 +1148,20 @@ export default function Jovair() {
     setFilterAlliance("All");
     setFilterTransfer(null);
     setFilterNonstop(false);
+    setFilterMaxPrice(null);
     setParsed(p);
 
     // Try Amadeus first
     let realFlights = null;
     try {
+      const futureDate = new Date(Date.now() + 30*864e5).toISOString().slice(0,10);
       const res = await fetch("/api/flights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           origins: p.origins,
           destinations: p.destinations,
+          departureDate: futureDate,
           cabin: p.cabin,
           alliance: p.alliance,
           maxResults: 12,
@@ -1068,22 +1175,35 @@ export default function Jovair() {
       // Fall through to simulated
     }
 
-    setFlights(realFlights || generateFlights(p));
+    const simulated = generateFlights(p);
+    if (realFlights && realFlights.length > 0) {
+      const seen = new Set(realFlights.map(f=>`${f.airline?.code||""}-${f.origin}-${f.destination}`));
+      const extra = simulated.filter(f=>!seen.has(`${f.airline.code}-${f.origin}-${f.destination}`)).slice(0, 6);
+      setFlights([...realFlights, ...extra].sort((a,b)=>a.cash-b.cash));
+    } else {
+      setFlights(simulated);
+    }
     setPhase("results");
   }, [manualFrom, manualTo, manualCabin, manualAlliance, manualBudget]);
 
   const filtered = useMemo(() => {
     let f = [...flights];
-    if (filterAlliance!=="All") f=f.filter(fl=>fl.airline.alliance===filterAlliance);
+    if (filterAlliance!=="All") {
+      console.log("[Jovair Filter] Alliance:", filterAlliance, "| Before:", f.length, "| Alliances in results:", [...new Set(f.map(fl=>fl.airline?.alliance))]);
+      f=f.filter(fl=>fl.airline.alliance===filterAlliance);
+      console.log("[Jovair Filter] After:", f.length);
+    }
     if (filterTransfer) f=f.filter(fl=>fl.airline.transfers.includes(filterTransfer));
     if (filterNonstop) f=f.filter(fl=>fl.nonstop);
-    if (sortBy==="value") f.sort((a,b)=>(b.cpm||0)-(a.cpm||0));
-    else if (sortBy==="miles") f.sort((a,b)=>a.miles-b.miles);
-    else if (sortBy==="cash") f.sort((a,b)=>a.cash-b.cash);
-    else if (sortBy==="fastest") f.sort((a,b)=>a.durationMin-b.durationMin);
-    else if (sortBy==="nonstop") f.sort((a,b)=>a.stops-b.stops);
+    if (filterMaxPrice) f=f.filter(fl=>fl.cash<=filterMaxPrice);
+    const dir = sortDir==="asc" ? 1 : -1;
+    if (sortBy==="value") f.sort((a,b)=>dir*((b.cpm||0)-(a.cpm||0)));
+    else if (sortBy==="miles") f.sort((a,b)=>dir*((a.miles||999999)-(b.miles||999999)));
+    else if (sortBy==="cash") f.sort((a,b)=>dir*((a.cash||999999)-(b.cash||999999)));
+    else if (sortBy==="fastest") f.sort((a,b)=>dir*((a.durationMin||9999)-(b.durationMin||9999)));
+    else if (sortBy==="nonstop") f.sort((a,b)=>dir*((a.stops||99)-(b.stops||99)));
     return f;
-  }, [flights,sortBy,filterAlliance,filterTransfer,filterNonstop]);
+  }, [flights,sortBy,sortDir,filterAlliance,filterTransfer,filterNonstop,filterMaxPrice]);
 
   const stats = useMemo(()=>{
     if (!flights.length) return null;
@@ -1107,7 +1227,7 @@ export default function Jovair() {
   const Nav = () => (
     <nav style={{position:"sticky",top:0,zIndex:1000,background:s.navy,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 28px",height:56,backdropFilter:"blur(12px)"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>{setTab("search");setPhase("home");}}>
-        <svg width="30" height="30" viewBox="0 0 30 30"><defs><linearGradient id="jvg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00b4a0"/><stop offset="100%" stopColor="#00d4aa"/></linearGradient></defs><circle cx="15" cy="15" r="15" fill="url(#jvg)"/><text x="15" y="20" textAnchor="middle" fill="#fff" fontSize="16" fontWeight="800" fontFamily="'Manrope'">J</text></svg>
+        <div style={{width:30,height:30,borderRadius:8,background:s.teal,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:"#fff",fontSize:16,fontWeight:800,fontFamily:"'Manrope'"}}>J</span></div>
         <span style={{color:"#fff",fontSize:21,fontWeight:800,letterSpacing:"-0.5px"}}>Jovair</span>
         <span style={{background:"rgba(0,180,160,0.2)",color:s.teal,fontSize:9,fontWeight:800,padding:"2px 7px",borderRadius:4,letterSpacing:"0.5px"}}>AI</span>
       </div>
@@ -1116,7 +1236,7 @@ export default function Jovair() {
           <button key={id} onClick={()=>{setTab(id);setPhase("home");}} style={{background:tab===id?"rgba(255,255,255,0.1)":"transparent",color:tab===id?"#fff":"rgba(255,255,255,0.55)",border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,fontWeight:tab===id?700:500,cursor:"pointer",transition:"all 0.2s",borderBottom:tab===id?`2px solid ${s.teal}`:"2px solid transparent"}}>{label}</button>
         ))}
       </div>
-      <button style={{background:`linear-gradient(135deg, ${s.teal}, #00d4aa)`,color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",fontSize:13,fontWeight:700,cursor:"pointer",transition:"transform 0.15s"}} onMouseEnter={e=>e.target.style.transform="scale(1.03)"} onMouseLeave={e=>e.target.style.transform="scale(1)"}>Sign In</button>
+      <button style={{background:s.teal,color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",fontSize:13,fontWeight:700,cursor:"pointer",transition:"transform 0.15s"}} onMouseEnter={e=>e.target.style.transform="scale(1.03)"} onMouseLeave={e=>e.target.style.transform="scale(1)"}>Sign In</button>
     </nav>
   );
 
@@ -1127,18 +1247,17 @@ export default function Jovair() {
         <div style={{flex:1,position:"relative"}}>
           <input ref={big?inputRef:undefined} autoFocus={autoFocus} value={query} onChange={e=>setQuery(e.target.value)}
             onKeyDown={e=>{if(e.key==="Enter")runSearch(query);if(e.key==="Escape")setShowHistory(false);}}
-            onFocus={()=>searchHistory.length&&setShowHistory(true)}
-            onBlur={()=>setTimeout(()=>setShowHistory(false),200)}
-            placeholder='Try: "Cheapest business class out of NYC on Star Alliance miles"'
-            style={{width:"100%",padding:big?"18px 20px 18px 48px":"14px 16px 14px 42px",fontSize:big?16:14,fontWeight:500,border:"2px solid #e2e5ea",borderRadius:14,background:"#fff",color:s.text,transition:"all 0.25s",boxShadow:big?"0 4px 24px rgba(0,0,0,0.06)":"none"}}
-            onFocusCapture={e=>{e.target.style.borderColor=s.teal;if(big)e.target.style.boxShadow=`0 4px 24px rgba(0,180,160,0.12)`;}}
+            onFocus={e=>{searchHistory.length&&setShowHistory(true);e.target.style.borderColor=s.navy;e.target.style.boxShadow="0 0 0 1px rgba(11,29,58,0.08), 0 2px 8px rgba(0,0,0,0.04)";}}
+            onBlur={e=>{setTimeout(()=>setShowHistory(false),200);e.target.style.borderColor="#e2e5ea";e.target.style.boxShadow="none";}}
+            placeholder='Search flights... try "business class to Tokyo under 50k miles"'
+            style={{width:"100%",padding:big?"18px 20px 18px 48px":"14px 16px 14px 42px",fontSize:big?16:14,fontWeight:500,border:"1px solid #e2e5ea",borderRadius:12,background:"#fff",color:s.text,transition:"all 0.2s",boxShadow:"none"}}
           />
           <svg style={{position:"absolute",left:big?18:14,top:"50%",transform:"translateY(-50%)",opacity:.35}} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          {query && <button onClick={()=>setQuery("")} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",opacity:.4,fontSize:16,lineHeight:1}}>✕</button>}
+          {query && <button onClick={()=>setQuery("")} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",opacity:.4,fontSize:16,lineHeight:1,fontFamily:"inherit"}} aria-label="Clear">×</button>}
         </div>
-        <button onClick={()=>runSearch(query)} style={{background:`linear-gradient(135deg, ${s.teal}, #00c9a0)`,color:"#fff",border:"none",borderRadius:14,padding:big?"0 32px":"0 22px",fontSize:big?15:14,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.2s",boxShadow:"0 2px 12px rgba(0,180,160,0.25)"}}
-          onMouseEnter={e=>{e.target.style.transform="translateY(-1px)";e.target.style.boxShadow="0 6px 20px rgba(0,180,160,0.35)";}}
-          onMouseLeave={e=>{e.target.style.transform="none";e.target.style.boxShadow="0 2px 12px rgba(0,180,160,0.25)";}}
+        <button onClick={()=>runSearch(query)} style={{background:s.teal,color:"#fff",border:"none",borderRadius:10,padding:big?"0 32px":"0 22px",fontSize:big?15:14,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.2s"}}
+          onMouseEnter={e=>{e.target.style.opacity="0.9";}}
+          onMouseLeave={e=>{e.target.style.opacity="1";}}
         >Search</button>
       </div>
       {showHistory && searchHistory.length>0 && (
@@ -1147,7 +1266,7 @@ export default function Jovair() {
           {searchHistory.map((h,i)=>(
             <button key={i} onClick={()=>runSearch(h)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"10px 14px",background:"none",border:"none",cursor:"pointer",fontSize:13,color:s.text,textAlign:"left",transition:"background 0.15s"}}
               onMouseEnter={e=>e.target.style.background="#f6f7f9"} onMouseLeave={e=>e.target.style.background="none"}>
-              <span style={{opacity:.35,fontSize:14}}>↩</span>{h}
+              {h}
             </button>
           ))}
         </div>
@@ -1169,7 +1288,7 @@ export default function Jovair() {
           <span style={{width:6,height:6,borderRadius:"50%",background:s.teal}} />
           <span style={{fontSize:12,fontWeight:600,color:s.teal}}>Powered by AI · {AIRLINES.filter(a=>a.type==="full-service").length} Loyalty Programs · {AIRPORTS.length} Airports</span>
         </div>
-        <h1 style={{fontSize:48,fontWeight:800,color:s.navy,lineHeight:1.1,letterSpacing:"-1.5px",maxWidth:640,margin:"0 auto"}}>Search flights like<br/>you <span style={{background:`linear-gradient(135deg, ${s.teal}, #00d4aa)`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>think</span>.</h1>
+        <h1 style={{fontSize:48,fontWeight:800,color:s.navy,lineHeight:1.1,letterSpacing:"-1.5px",maxWidth:640,margin:"0 auto"}}>Search flights like<br/>you <span style={{color:s.teal}}>think</span>.</h1>
         <p style={{fontSize:17,color:s.muted,marginTop:16,maxWidth:520,marginInline:"auto",lineHeight:1.65}}>
           Type what you want in plain English. Jovair compares miles vs. cash across every major loyalty program — so you always know the best deal.
         </p>
@@ -1185,10 +1304,10 @@ export default function Jovair() {
         <p style={{fontSize:11,fontWeight:700,color:s.muted,textTransform:"uppercase",letterSpacing:"1.5px",marginBottom:14}}>Try a search</p>
         <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
           {EXAMPLE_QUERIES.map((eq,i)=>(
-            <button key={i} onClick={()=>runSearch(eq.text)} style={{background:"#fff",border:"1px solid #e2e5ea",borderRadius:22,padding:"9px 16px",fontSize:13,color:s.text,cursor:"pointer",fontWeight:500,transition:"all 0.2s",display:"flex",alignItems:"center",gap:6}}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor=s.teal;e.currentTarget.style.background="#f0fdfb";e.currentTarget.style.transform="translateY(-1px)";}}
+            <button key={i} onClick={()=>runSearch(eq.text)} style={{background:"#fff",border:"1px solid #e2e5ea",borderRadius:22,padding:"9px 16px",fontSize:13,color:s.text,cursor:"pointer",fontWeight:500,transition:"all 0.2s",display:"flex",alignItems:"center"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=s.teal;e.currentTarget.style.background="#f8faf9";e.currentTarget.style.transform="translateY(-1px)";}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor="#e2e5ea";e.currentTarget.style.background="#fff";e.currentTarget.style.transform="none";}}>
-              <span style={{fontSize:14}}>{eq.icon}</span>{eq.text}
+              {eq.text}
             </button>
           ))}
         </div>
@@ -1211,7 +1330,7 @@ export default function Jovair() {
                 onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <div style={{width:38,height:38,borderRadius:8,background:al?.color,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:700,fontFamily:"'IBM Plex Mono'"}}>{sp.airline}</div>
+                    {AirlineLogo({code:sp.airline, color:al?.color, size:38})}
                     <div>
                       <div style={{fontSize:15,fontWeight:700,color:s.navy}}>{sp.route}</div>
                       <div style={{fontSize:11,color:s.muted}}>{sp.program} · {sp.cabin}</div>
@@ -1233,13 +1352,13 @@ export default function Jovair() {
           <p style={{fontSize:14,color:"rgba(255,255,255,0.5)",textAlign:"center",marginTop:6,marginBottom:36}}>The points & miles industry has real problems. We're fixing them.</p>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(230px, 1fr))",gap:16}}>
             {[
-              {icon:"🔍",title:"Transparency Crisis",desc:"Airlines hide true point values behind dynamic pricing. Jovair shows the real cents-per-mile on every flight."},
-              {icon:"🧩",title:"Fragmented Search",desc:"Comparing miles vs. cash requires 20+ websites. Jovair unifies everything in one search."},
-              {icon:"📉",title:"Silent Devaluations",desc:"Programs devalue points with no warning. Jovair tracks changes and alerts you."},
-              {icon:"🤖",title:"AI-First Discovery",desc:"Stop filling out rigid forms. Just type what you want in plain English."},
+              {title:"Transparency Crisis",desc:"Airlines hide true point values behind dynamic pricing. Jovair shows the real cents-per-mile on every flight."},
+              {title:"Fragmented Search",desc:"Comparing miles vs. cash requires 20+ websites. Jovair unifies everything in one search."},
+              {title:"Silent Devaluations",desc:"Programs devalue points with no warning. Jovair tracks changes and alerts you."},
+              {title:"AI-First Discovery",desc:"Stop filling out rigid forms. Just type what you want in plain English."},
             ].map((c,i)=>(
               <div key={i} style={{background:"rgba(255,255,255,0.05)",borderRadius:14,padding:24,border:"1px solid rgba(255,255,255,0.08)",animation:`jv-fadein 0.5s ease ${i*0.1}s both`}}>
-                <div style={{fontSize:32,marginBottom:10}}>{c.icon}</div>
+                <div style={{fontSize:11,fontWeight:700,color:s.teal,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:12}}>{String.fromCharCode(65+i)}</div>
                 <div style={{fontSize:15,fontWeight:700,color:"#fff",marginBottom:8}}>{c.title}</div>
                 <div style={{fontSize:13,color:"rgba(255,255,255,0.55)",lineHeight:1.6}}>{c.desc}</div>
               </div>
@@ -1299,7 +1418,7 @@ export default function Jovair() {
           <label htmlFor="budget-toggle" style={{cursor:"pointer",fontSize:13,fontWeight:500,color:s.text}}>Include budget airlines</label>
         </div>
 
-        <button onClick={runManualSearch} disabled={!manualFrom || !manualTo} style={{width:"100%",background:manualFrom&&manualTo?`linear-gradient(135deg, ${s.teal}, #00c9a0)`:"#ccc",color:"#fff",border:"none",borderRadius:10,padding:"14px 20px",fontSize:15,fontWeight:700,cursor:manualFrom&&manualTo?"pointer":"not-allowed",transition:"all 0.2s"}}>
+        <button onClick={runManualSearch} disabled={!manualFrom || !manualTo} style={{width:"100%",background:manualFrom&&manualTo?s.teal:"#ccc",color:"#fff",border:"none",borderRadius:10,padding:"14px 20px",fontSize:15,fontWeight:700,cursor:manualFrom&&manualTo?"pointer":"not-allowed",transition:"all 0.2s"}}>
           Search Flights
         </button>
       </div>
@@ -1323,14 +1442,16 @@ export default function Jovair() {
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:420,animation:"jv-fadein 0.3s ease"}}>
       {parsed?.summary && (
         <div style={{background:"#fff",borderRadius:12,padding:"12px 20px",marginBottom:28,border:"1px solid #e8eaef",maxWidth:520}}>
-          <span style={{fontSize:11,fontWeight:700,color:s.teal,marginRight:8}}>✓ PARSED</span>
+          <span style={{fontSize:11,fontWeight:700,color:s.teal,marginRight:8}}>PARSED</span>
           <span style={{fontSize:13,color:s.text}}>{parsed.summary}</span>
         </div>
       )}
       <div style={{fontSize:18,fontWeight:700,color:s.navy,marginBottom:20}}>Scanning top airlines...</div>
       <div style={{display:"flex",flexWrap:"wrap",gap:8,maxWidth:500,justifyContent:"center",marginBottom:28}}>
         {AIRLINES.slice(0,20).map((al,i)=>(
-          <div key={al.code} style={{width:42,height:42,borderRadius:8,background:i<=scanIndex?al.color:"#e8eaef",display:"flex",alignItems:"center",justifyContent:"center",color:i<=scanIndex?"#fff":"#ccc",fontSize:10,fontWeight:700,fontFamily:"'IBM Plex Mono'",transition:"all 0.3s",transform:i===scanIndex?"scale(1.15)":"scale(1)",boxShadow:i===scanIndex?`0 4px 16px ${al.color}40`:"none"}}>{al.code}</div>
+          <div key={al.code} style={{width:42,height:42,borderRadius:8,background:i<=scanIndex?"#f8f9fa":"#e8eaef",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.3s",transform:i===scanIndex?"scale(1.15)":"scale(1)",boxShadow:i===scanIndex?`0 4px 16px ${al.color}40`:"none",overflow:"hidden",border:i<=scanIndex?"1px solid #e8eaef":"1px solid #e8eaef",opacity:i<=scanIndex?1:0.4}}>
+            <img src={airlineLogo(al.code,80)} alt={al.code} style={{width:34,height:34,objectFit:"contain"}} onError={e=>{e.target.style.display="none";e.target.parentElement.style.background=al.color;e.target.parentElement.innerHTML=`<span style="color:#fff;font-size:10px;font-weight:700;font-family:'IBM Plex Mono',monospace">${al.code}</span>`;}} />
+          </div>
         ))}
       </div>
       <div style={{width:300,height:4,background:"#e8eaef",borderRadius:2,overflow:"hidden"}}>
@@ -1353,87 +1474,79 @@ export default function Jovair() {
     const dest = apByCode(fl.destination);
 
     return (
-      <div style={{background:"#fff",borderRadius:16,cursor:"pointer",border:isBest?`2px solid ${s.teal}`:"1px solid #e8eaef",animation:`jv-fadein 0.4s ease ${rank*0.05}s both`,transition:"all 0.25s",position:"relative",overflow:"hidden",...(isBest?{boxShadow:`0 0 0 1px ${s.teal}20, 0 8px 32px ${s.teal}15`}:{})}}
+      <div style={{background:"#fff",borderRadius:14,cursor:"pointer",border:isBest?`2px solid ${s.teal}`:"1px solid #e8eaef",animation:`jv-fadein 0.4s ease ${rank*0.05}s both`,transition:"all 0.25s",position:"relative",overflow:"hidden",...(isBest?{boxShadow:"0 2px 12px rgba(0,0,0,0.06)"}:{})}}
         onMouseEnter={e=>{if(!isBest)e.currentTarget.style.boxShadow="0 4px 20px rgba(0,0,0,0.06)";}}
         onMouseLeave={e=>{if(!isBest)e.currentTarget.style.boxShadow="none";}}>
         {isBest && (
-          <div style={{background:`linear-gradient(135deg, ${s.teal}, #00d4aa)`,color:"#fff",fontSize:11,fontWeight:700,padding:"5px 16px",textAlign:"center",letterSpacing:"0.5px",animation:"jv-ribbon 0.5s ease"}}>
-            🏆 BEST VALUE — Save ${(fl.cash-fl.fees).toLocaleString()} by using {fl.miles ? fl.miles.toLocaleString() + " miles" : "cash"}
+          <div style={{background:s.teal,color:"#fff",fontSize:11,fontWeight:700,padding:"5px 16px",textAlign:"center",letterSpacing:"0.5px",animation:"jv-ribbon 0.5s ease"}}>
+            BEST VALUE — Save ${(fl.cash-fl.fees).toLocaleString()} by using {fl.miles ? fl.miles.toLocaleString() + " miles" : "cash"}
           </div>
         )}
-        <div style={{padding:"18px 22px"}} onClick={()=>setExpandedId(expanded?null:fl.id)}>
-          <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10,minWidth:175}}>
-              <div style={{width:42,height:42,borderRadius:10,background:fl.airline.color,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:13,fontWeight:700,fontFamily:"'IBM Plex Mono'",flexShrink:0}}>{fl.airline.code}</div>
-              <div>
-                <div style={{fontSize:14,fontWeight:700,color:s.navy}}>{fl.airline.name}</div>
-                <div style={{fontSize:11,color:s.muted}}>{fl.depDate} · {fl.aircraft}</div>
-              </div>
-            </div>
-
-            <div style={{display:"flex",alignItems:"center",gap:14,flex:1,minWidth:250,justifyContent:"center"}}>
-              <div style={{textAlign:"right"}}>
-                <div className="jv-mono" style={{fontSize:20,fontWeight:700,color:s.navy}}>{fl.depTime}</div>
-                <div className="jv-mono" style={{fontSize:12,fontWeight:600,color:s.muted}}>{fl.origin}</div>
-                {orig && <div style={{fontSize:10,color:s.muted}}>{orig.city}</div>}
-              </div>
-              <div style={{flex:1,maxWidth:170,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                <div style={{fontSize:11,color:s.muted,fontWeight:500}}>{fl.duration}</div>
-                <div style={{width:"100%",height:2,background:"#e2e5ea",position:"relative",borderRadius:1}}>
-                  <div style={{position:"absolute",left:0,top:-3,width:8,height:8,borderRadius:"50%",background:s.teal}} />
-                  {fl.stops>0 && Array.from({length:fl.stops}).map((_,i)=>(
-                    <div key={i} style={{position:"absolute",left:`${(i+1)*100/(fl.stops+1)}%`,top:-2,width:6,height:6,borderRadius:"50%",background:"#d1d5db",border:"2px solid #fff"}} />
-                  ))}
-                  <div style={{position:"absolute",right:0,top:-3,width:8,height:8,borderRadius:"50%",background:s.teal}} />
-                </div>
-                <div style={{fontSize:11,color:fl.nonstop?s.teal:s.muted,fontWeight:fl.nonstop?600:400}}>
-                  {fl.nonstop?"Nonstop":`${fl.stops} stop${fl.stops>1?"s":""}`}
-                </div>
-              </div>
-              <div style={{textAlign:"left"}}>
-                <div className="jv-mono" style={{fontSize:20,fontWeight:700,color:s.navy}}>{fl.arrTime}</div>
-                <div className="jv-mono" style={{fontSize:12,fontWeight:600,color:s.muted}}>{fl.destination}</div>
-                {dest && <div style={{fontSize:10,color:s.muted}}>{dest.city}</div>}
-              </div>
-            </div>
-
-            <div style={{display:"flex",gap:10,alignItems:"center",flexShrink:0}}>
+        <div style={{padding:"20px 24px"}} onClick={()=>setExpandedId(expanded?null:fl.id)}>
+          <div style={{display:"flex",alignItems:"center",gap:20,flexWrap:"wrap"}}>
+            {/* Price first — largest element, left-aligned */}
+            <div style={{display:"flex",gap:12,alignItems:"center",flexShrink:0}}>
               {fl.miles ? (
                 <>
-                  <div style={{background:"#f0fdfb",border:`1px solid ${s.teal}25`,borderRadius:12,padding:"10px 16px",textAlign:"center",minWidth:115}}>
-                    <div className="jv-mono" style={{fontSize:19,fontWeight:700,color:s.teal}}>{fl.miles.toLocaleString()}</div>
-                    <div style={{fontSize:10,color:s.muted}}>miles + ${fl.fees}</div>
-                    <div className="jv-mono" style={{fontSize:9,color:s.muted,marginTop:1}}>{fl.fareClass} class</div>
+                  <div style={{textAlign:"left"}}>
+                    <div className="jv-mono" style={{fontSize:28,fontWeight:700,color:s.teal,lineHeight:1.1}}>{fl.miles.toLocaleString()}</div>
+                    <div style={{fontSize:11,color:s.muted}}>miles + ${fl.fees}</div>
                   </div>
-                  <div style={{background:"#eff6ff",border:`1px solid ${s.blue}25`,borderRadius:12,padding:"10px 16px",textAlign:"center",minWidth:95}}>
-                    <div className="jv-mono" style={{fontSize:19,fontWeight:700,color:s.blue}}>${fl.cash.toLocaleString()}</div>
-                    <div style={{fontSize:10,color:s.muted}}>cash fare</div>
+                  <div style={{width:1,height:36,background:"#e8eaef"}} />
+                  <div style={{textAlign:"left"}}>
+                    <div className="jv-mono" style={{fontSize:22,fontWeight:700,color:s.navy,lineHeight:1.1}}>${fl.cash.toLocaleString()}</div>
+                    <div style={{fontSize:11,color:s.muted}}>cash</div>
                   </div>
-                  <div style={{background:rating.bg,borderRadius:12,padding:"10px 14px",textAlign:"center",minWidth:78}}>
-                    <div className="jv-mono" style={{fontSize:19,fontWeight:700,color:rating.color}}>{fl.cpm}¢</div>
-                    <div style={{fontSize:10,fontWeight:600,color:rating.color}}>{rating.emoji} {rating.label}</div>
-                  </div>
+                  <span style={{background:rating.bg,color:rating.color,fontSize:10,fontWeight:600,padding:"4px 10px",borderRadius:6,marginLeft:4}}>{rating.label}</span>
                 </>
               ) : (
                 <>
-                  <div style={{background:"#fff3cd",border:`1px solid ${s.gold}40`,borderRadius:12,padding:"10px 16px",textAlign:"center",minWidth:115}}>
-                    <div className="jv-mono" style={{fontSize:16,fontWeight:700,color:s.gold}}>CASH ONLY</div>
-                    <div style={{fontSize:10,color:s.muted}}>Budget airline</div>
-                  </div>
-                  <div style={{background:"#eff6ff",border:`1px solid ${s.blue}25`,borderRadius:12,padding:"10px 16px",textAlign:"center",minWidth:95}}>
-                    <div className="jv-mono" style={{fontSize:19,fontWeight:700,color:s.blue}}>${fl.cash.toLocaleString()}</div>
-                    <div style={{fontSize:10,color:s.muted}}>cash fare</div>
+                  <div style={{textAlign:"left"}}>
+                    <div className="jv-mono" style={{fontSize:28,fontWeight:700,color:s.navy,lineHeight:1.1}}>${fl.cash.toLocaleString()}</div>
+                    <div style={{fontSize:11,color:s.muted}}>cash only</div>
                   </div>
                 </>
               )}
             </div>
 
-            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:5,minWidth:85}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,minWidth:140}}>
+              {AirlineLogo({code:fl.airline.code, color:fl.airline.color, size:36})}
+              <div>
+                <div style={{fontSize:13,fontWeight:600,color:s.navy}}>{fl.airline.name}</div>
+                <div style={{fontSize:11,color:s.muted}}>{fl.depDate}</div>
+              </div>
+            </div>
+
+            <div style={{display:"flex",alignItems:"center",gap:14,flex:1,minWidth:220,justifyContent:"center"}}>
+              <div style={{textAlign:"right"}}>
+                <div className="jv-mono" style={{fontSize:16,fontWeight:700,color:s.navy}}>{fl.depTime}</div>
+                <div className="jv-mono" style={{fontSize:11,fontWeight:600,color:s.muted}}>{fl.origin}</div>
+              </div>
+              <div style={{flex:1,maxWidth:150,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                <div style={{fontSize:11,color:s.muted}}>{fl.duration}</div>
+                <div style={{width:"100%",height:2,background:"#e2e5ea",position:"relative",borderRadius:1}}>
+                  <div style={{position:"absolute",left:0,top:-3,width:6,height:6,borderRadius:"50%",background:s.teal}} />
+                  {fl.stops>0 && Array.from({length:fl.stops}).map((_,i)=>(
+                    <div key={i} style={{position:"absolute",left:`${(i+1)*100/(fl.stops+1)}%`,top:-2,width:5,height:5,borderRadius:"50%",background:"#d1d5db",border:"2px solid #fff"}} />
+                  ))}
+                  <div style={{position:"absolute",right:0,top:-3,width:6,height:6,borderRadius:"50%",background:s.teal}} />
+                </div>
+                <div style={{fontSize:10,color:fl.nonstop?s.teal:s.muted,fontWeight:fl.nonstop?600:400}}>
+                  {fl.nonstop?"Nonstop":`${fl.stops} stop${fl.stops>1?"s":""}`}
+                </div>
+              </div>
+              <div style={{textAlign:"left"}}>
+                <div className="jv-mono" style={{fontSize:16,fontWeight:700,color:s.navy}}>{fl.arrTime}</div>
+                <div className="jv-mono" style={{fontSize:11,fontWeight:600,color:s.muted}}>{fl.destination}</div>
+              </div>
+            </div>
+
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,minWidth:75}}>
               <span style={{background:ALLIANCE_COLORS[fl.airline.alliance]+"18",color:ALLIANCE_COLORS[fl.airline.alliance],fontSize:10,fontWeight:600,padding:"3px 9px",borderRadius:5}}>{fl.airline.alliance}</span>
               <span style={{fontSize:11,color:fl.seats<=3?s.red:s.muted,fontWeight:fl.seats<=3?700:400}}>
-                {fl.seats<=3?"🔥 ":""}{fl.seats} seat{fl.seats>1?"s":""}
+                {fl.seats} seat{fl.seats>1?"s":""}
               </span>
-              {fl.hasDevaluation && <span style={{fontSize:10,color:s.gold,fontWeight:600}}>⚠️ Devalued</span>}
+              {fl.hasDevaluation && <span style={{fontSize:10,color:s.gold,fontWeight:600}}>Devalued</span>}
             </div>
           </div>
 
@@ -1465,27 +1578,29 @@ export default function Jovair() {
               </div>
               {fl.hasDevaluation && fl.devaluation && (
                 <div style={{background:"#fef6e6",border:`1px solid ${s.gold}35`,borderRadius:12,padding:16,marginTop:16}}>
-                  <div style={{fontSize:12,fontWeight:700,color:s.gold}}>⚠️ Devaluation Alert — {fl.devaluation.program} ({fl.devaluation.date})</div>
+                  <div style={{fontSize:12,fontWeight:700,color:s.gold}}>Devaluation Alert — {fl.devaluation.program} ({fl.devaluation.date})</div>
                   <div style={{fontSize:12,color:s.text,marginTop:4}}>{fl.devaluation.desc}</div>
                 </div>
               )}
               {fl.miles && (
                 <div style={{background:"#f0fdfb",border:`1px solid ${s.teal}25`,borderRadius:12,padding:16,marginTop:16}}>
-                  <div style={{fontSize:12,fontWeight:700,color:s.teal,marginBottom:4}}>🤖 AI Recommendation</div>
+                  <div style={{fontSize:12,fontWeight:700,color:s.teal,marginBottom:4}}>AI Recommendation</div>
                   <div style={{fontSize:13,color:s.text,lineHeight:1.55}}>{aiRec(fl.cpm)}</div>
                 </div>
               )}
               <div style={{display:"flex",gap:10,marginTop:16,flexWrap:"wrap"}}>
-                <button onClick={()=>window.open(getBookingUrl(fl.airline.code, fl.origin, fl.destination, fl.depDateObj), "_blank")}
-                  style={{background:`linear-gradient(135deg, ${s.teal}, #00c9a0)`,color:"#fff",border:"none",borderRadius:10,padding:"11px 22px",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:`0 2px 12px ${s.teal}30`,transition:"transform 0.15s"}}
-                  onMouseEnter={e=>e.target.style.transform="translateY(-1px)"} onMouseLeave={e=>e.target.style.transform="none"}>
-                  {fl.miles ? "Book with Miles →" : "Book Now →"}
+                <button onClick={()=>window.open(getBookingUrl(fl.airline.code, fl.origin, fl.destination), "_blank")}
+                  style={{background:s.teal,color:"#fff",border:"none",borderRadius:8,padding:"11px 22px",fontSize:13,fontWeight:700,cursor:"pointer",transition:"opacity 0.15s"}}
+                  onMouseEnter={e=>e.target.style.opacity="0.9"} onMouseLeave={e=>e.target.style.opacity="1"}>
+                  Book with Cash — ${fl.cash}
                 </button>
-                <button onClick={()=>{const al=AIRLINES.find(a=>a.code===fl.airline.code); window.open(`https://www.${al?.name?.toLowerCase().replace(/[^a-z]/g,"")||fl.airline.code.toLowerCase()}.com`, "_blank");}}
-                  style={{background:s.blue,color:"#fff",border:"none",borderRadius:10,padding:"11px 22px",fontSize:13,fontWeight:700,cursor:"pointer",transition:"transform 0.15s"}}
-                  onMouseEnter={e=>e.target.style.transform="translateY(-1px)"} onMouseLeave={e=>e.target.style.transform="none"}>
-                  Visit {fl.airline.name} →
-                </button>
+                {fl.miles && (
+                  <button onClick={()=>window.open(getBookingUrl(fl.airline.code, fl.origin, fl.destination), "_blank")}
+                    style={{background:"transparent",color:s.teal,border:`2px solid ${s.teal}`,borderRadius:8,padding:"9px 20px",fontSize:13,fontWeight:700,cursor:"pointer",transition:"all 0.15s"}}
+                    onMouseEnter={e=>{e.target.style.background=s.teal+"08";}} onMouseLeave={e=>{e.target.style.background="transparent";}}>
+                    Book with Miles — {fl.miles.toLocaleString()} mi
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -1501,8 +1616,8 @@ export default function Jovair() {
 
       {parsed && (
         <div style={{background:"#fff",borderRadius:14,padding:"14px 22px",marginBottom:18,border:"1px solid #e8eaef",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-          <span style={{background:`linear-gradient(135deg, ${s.teal}15, ${s.teal}08)`,color:s.teal,fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:8,border:`1px solid ${s.teal}20`}}>🤖 AI Understood</span>
-          {flights[0]?.source==="amadeus" && <span style={{background:"#eef6ff",color:"#1a6eff",fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:6,border:"1px solid #1a6eff20",letterSpacing:"0.3px"}}>✈ LIVE DATA</span>}
+          <span style={{background:s.teal+"12",color:s.teal,fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:8,border:`1px solid ${s.teal}25`}}>AI Understood</span>
+          {flights[0]?.source==="amadeus" && <span style={{background:"#eef6ff",color:"#1a6eff",fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:6,border:"1px solid #1a6eff20",letterSpacing:"0.3px"}}>LIVE DATA</span>}
           <span style={{fontSize:14,color:s.navy,fontWeight:600,flex:1}}>{parsed.summary}</span>
           <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
             {parsed.origins?.slice(0,3).map(o=><span key={o} className="jv-mono" style={{fontSize:11,color:s.muted,background:"#f3f4f6",padding:"3px 8px",borderRadius:5,fontWeight:600}}>{o}</span>)}
@@ -1516,16 +1631,16 @@ export default function Jovair() {
       {stats && (
         <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,marginBottom:22}}>
           {[
-            {label:"Best Miles",value:aBestMiles.toLocaleString(),sub:"miles",color:s.teal,icon:"✈️"},
-            {label:"Best Cash",value:`$${aBestCash.toLocaleString()}`,sub:"fare",color:s.blue,icon:"💵"},
-            {label:"Best ¢/mi",value:`${aBestCpm}¢`,sub:"per mile",color:"#3b9e3b",icon:"🔥"},
-            {label:"Avg Value",value:`${aAvgCpm}¢`,sub:"per mile",color:s.gold,icon:"📊"},
-            {label:"Nonstop",value:stats.nonstops,sub:`of ${stats.totalResults}`,color:s.navy,icon:"⚡"},
+            {label:"Best Miles",value:aBestMiles.toLocaleString(),sub:"miles",color:s.teal},
+            {label:"Best Cash",value:`$${aBestCash.toLocaleString()}`,sub:"fare",color:s.blue},
+            {label:"Best ¢/mi",value:`${aBestCpm}¢`,sub:"per mile",color:"#3b9e3b"},
+            {label:"Avg Value",value:`${aAvgCpm}¢`,sub:"per mile",color:s.gold},
+            {label:"Nonstop",value:stats.nonstops,sub:`of ${stats.totalResults}`,color:s.navy},
           ].map((m,i)=>(
             <div key={i} style={{background:"#fff",borderRadius:12,padding:"16px 14px",border:"1px solid #e8eaef",textAlign:"center",borderTop:`3px solid ${m.color}`,animation:`jv-countup 0.5s ease ${i*0.1}s both`}}>
-              <div style={{fontSize:11,color:s.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{m.icon} {m.label}</div>
-              <div className="jv-mono" style={{fontSize:24,fontWeight:700,color:m.color,marginTop:4}}>{m.value}</div>
-              <div style={{fontSize:10,color:s.muted}}>{m.sub}</div>
+              <div className="jv-mono" style={{fontSize:24,fontWeight:700,color:m.color}}>{m.value}</div>
+              <div style={{fontSize:11,color:s.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",marginTop:4}}>{m.label}</div>
+              <div style={{fontSize:10,color:s.muted,marginTop:2}}>{m.sub}</div>
             </div>
           ))}
         </div>
@@ -1533,29 +1648,35 @@ export default function Jovair() {
 
       <div style={{background:"#fff",borderRadius:12,padding:"12px 18px",marginBottom:22,border:"1px solid #e8eaef",display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
         <span style={{fontSize:11,fontWeight:700,color:s.muted}}>Sort:</span>
-        {[["value","Best Value"],["miles","Miles ↑"],["cash","Cash ↑"],["fastest","Fastest"],["nonstop","Nonstop"]].map(([id,l])=>(
-          <button key={id} onClick={()=>setSortBy(id)} style={{background:sortBy===id?s.navy:"transparent",color:sortBy===id?"#fff":s.muted,border:`1px solid ${sortBy===id?s.navy:"#e2e5ea"}`,borderRadius:20,padding:"5px 13px",fontSize:11,fontWeight:600,cursor:"pointer"}}>{l}</button>
+        {[["value","Best Value"],["miles","Miles"],["cash","Cash"],["fastest","Duration"],["nonstop","Stops"]].map(([id,l])=>(
+          <button key={id} onClick={()=>{console.log("[Jovair] Sort clicked:",id);if(sortBy===id){setSortDir(d=>d==="asc"?"desc":"asc")}else{setSortBy(id);setSortDir("asc")}}} style={{background:sortBy===id?s.navy:"transparent",color:sortBy===id?"#fff":s.muted,border:`1px solid ${sortBy===id?s.navy:"#e2e5ea"}`,borderRadius:20,padding:"5px 13px",fontSize:11,fontWeight:600,cursor:"pointer"}}>{l}{sortBy===id?(sortDir==="asc"?" ↑":" ↓"):""}</button>
         ))}
         <div style={{width:1,height:20,background:"#e2e5ea",margin:"0 4px"}} />
         <span style={{fontSize:11,fontWeight:700,color:s.muted}}>Alliance:</span>
-        {["All","Star Alliance","oneworld","SkyTeam"].map(a=>(
-          <button key={a} onClick={()=>setFilterAlliance(a)} style={{background:filterAlliance===a?(ALLIANCE_COLORS[a]||s.navy):"transparent",color:filterAlliance===a?"#fff":s.muted,border:`1px solid ${filterAlliance===a?(ALLIANCE_COLORS[a]||s.navy):"#e2e5ea"}`,borderRadius:20,padding:"5px 13px",fontSize:11,fontWeight:600,cursor:"pointer"}}>{a}</button>
-        ))}
+        {["All","Star Alliance","oneworld","SkyTeam","Budget"].map(a=>{
+          const cnt = a==="All" ? flights.length : flights.filter(fl=>fl.airline.alliance===a).length;
+          return <button key={a} onClick={()=>{console.log("[Jovair] Filter clicked:",a);setFilterAlliance(a);}} style={{background:filterAlliance===a?(ALLIANCE_COLORS[a]||s.navy):"transparent",color:filterAlliance===a?"#fff":s.muted,border:`1px solid ${filterAlliance===a?(ALLIANCE_COLORS[a]||s.navy):"#e2e5ea"}`,borderRadius:20,padding:"5px 13px",fontSize:11,fontWeight:600,cursor:"pointer",opacity:cnt===0&&a!=="All"?0.4:1}}>{a}{cnt>0&&a!=="All"?` (${cnt})`:""}</button>;
+        })}
         <div style={{width:1,height:20,background:"#e2e5ea",margin:"0 4px"}} />
         {TRANSFER_PARTNERS.map(tp=>(
           <button key={tp.name} onClick={()=>setFilterTransfer(filterTransfer===tp.name?null:tp.name)} style={{background:filterTransfer===tp.name?tp.color:"transparent",color:filterTransfer===tp.name?"#fff":s.muted,border:`1px solid ${filterTransfer===tp.name?tp.color:"#e2e5ea"}`,borderRadius:20,padding:"5px 11px",fontSize:10,fontWeight:600,cursor:"pointer"}}>{tp.short}</button>
         ))}
         <div style={{width:1,height:20,background:"#e2e5ea",margin:"0 4px"}} />
         <button onClick={()=>setFilterNonstop(!filterNonstop)} style={{background:filterNonstop?s.teal:"transparent",color:filterNonstop?"#fff":s.muted,border:`1px solid ${filterNonstop?s.teal:"#e2e5ea"}`,borderRadius:20,padding:"5px 13px",fontSize:11,fontWeight:600,cursor:"pointer"}}>Nonstop</button>
+        <div style={{width:1,height:20,background:"#e2e5ea",margin:"0 4px"}} />
+        <span style={{fontSize:11,fontWeight:700,color:s.muted}}>Max:</span>
+        {[250,500,750,1000].map(p=>(
+          <button key={p} onClick={()=>setFilterMaxPrice(filterMaxPrice===p?null:p)} style={{background:filterMaxPrice===p?s.gold:"transparent",color:filterMaxPrice===p?"#fff":s.muted,border:`1px solid ${filterMaxPrice===p?s.gold:"#e2e5ea"}`,borderRadius:20,padding:"5px 11px",fontSize:10,fontWeight:600,cursor:"pointer"}}>${p}</button>
+        ))}
       </div>
 
-      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      {(filterAlliance!=="All"||filterTransfer||filterNonstop||filterMaxPrice) && <div style={{fontSize:12,color:s.muted,marginBottom:8}}>Showing {filtered.length} of {flights.length} results{filterAlliance!=="All"?` · ${filterAlliance}`:""}{filterNonstop?" · Nonstop":""}{filterMaxPrice?` · Under $${filterMaxPrice}`:""}</div>}
+      <div key={`${sortBy}-${sortDir}-${filterAlliance}-${filterNonstop}-${filterMaxPrice}-${filterTransfer||"none"}`} style={{display:"flex",flexDirection:"column",gap:12}}>
         {filtered.length>0 ? filtered.map((fl,i)=><FlightCard key={fl.id} fl={fl} rank={i}/>) : (
           <div style={{textAlign:"center",padding:48,color:s.muted}}>
-            <div style={{fontSize:32,marginBottom:12}}>🔍</div>
-            <div style={{fontSize:16,fontWeight:600,color:s.navy}}>No flights match your filters</div>
+            <div style={{fontSize:16,fontWeight:600,color:s.navy,marginBottom:8}}>No flights match your filters</div>
             <div style={{fontSize:13,marginTop:6}}>Try adjusting your alliance, transfer partner, or nonstop filters.</div>
-            <button onClick={()=>{setFilterAlliance("All");setFilterTransfer(null);setFilterNonstop(false);}} style={{background:s.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px 20px",marginTop:16,fontSize:13,fontWeight:600,cursor:"pointer"}}>Reset Filters</button>
+            <button onClick={()=>{setFilterAlliance("All");setFilterTransfer(null);setFilterNonstop(false);setFilterMaxPrice(null);}} style={{background:s.teal,color:"#fff",border:"none",borderRadius:8,padding:"10px 20px",marginTop:16,fontSize:13,fontWeight:600,cursor:"pointer"}}>Reset Filters</button>
           </div>
         )}
       </div>
@@ -1564,10 +1685,9 @@ export default function Jovair() {
         <div style={{background:"#fff",borderRadius:14,padding:"16px 22px",marginTop:24,border:"1px solid #e8eaef"}}>
           <div style={{fontSize:12,fontWeight:700,color:s.navy,marginBottom:10}}>Value Guide — Cents per Mile</div>
           <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
-            {[{r:"2.0¢+",l:"Excellent",c:"#00b4a0",e:"🔥"},{r:"1.5–2.0¢",l:"Good",c:"#3b9e3b",e:"👍"},{r:"1.0–1.5¢",l:"Fair",c:"#f5a623",e:"⚖️"},{r:"<1.0¢",l:"Pay Cash",c:"#e5384f",e:"💵"}].map(v=>(
+            {[{r:"2.0¢+",l:"Great Value",c:"#00b4a0"},{r:"1.5–2.0¢",l:"Strong Redemption",c:"#3b9e3b"},{r:"1.0–1.5¢",l:"Fair",c:"#f5a623"},{r:"<1.0¢",l:"Pay Cash",c:"#e5384f"}].map(v=>(
               <div key={v.l} style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontSize:14}}>{v.e}</span>
-                <div style={{width:10,height:10,borderRadius:3,background:v.c}} />
+                <div style={{width:8,height:8,borderRadius:2,background:v.c}} />
                 <span className="jv-mono" style={{fontSize:12,fontWeight:600,color:s.text}}>{v.r}</span>
                 <span style={{fontSize:12,color:s.muted}}>{v.l}</span>
               </div>
@@ -1590,7 +1710,7 @@ export default function Jovair() {
             onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <div style={{width:44,height:44,borderRadius:10,background:al?.color,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:14,fontWeight:700,fontFamily:"'IBM Plex Mono'"}}>{sp.airline}</div>
+                {AirlineLogo({code:sp.airline, color:al?.color, size:44})}
                 <div><div style={{fontSize:17,fontWeight:700,color:s.navy}}>{sp.route}</div><div style={{fontSize:12,color:s.muted}}>{sp.program}</div></div>
               </div>
               <span style={{background:ALLIANCE_COLORS[sp.alliance]+"18",color:ALLIANCE_COLORS[sp.alliance],fontSize:10,fontWeight:600,padding:"4px 10px",borderRadius:5}}>{sp.alliance}</span>
@@ -1622,7 +1742,7 @@ export default function Jovair() {
           <div key={i} style={{background:"#fff",borderRadius:14,padding:"20px 22px",border:"1px solid #e8eaef",borderLeft:`4px solid ${d.color}`,animation:`jv-fadein 0.4s ease ${i*0.08}s both`}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
-                {al && <div style={{width:34,height:34,borderRadius:7,background:al.color,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontWeight:700,fontFamily:"'IBM Plex Mono'"}}>{al.code}</div>}
+                {al && AirlineLogo({code:al.code, color:al.color, size:34})}
                 <div><div style={{fontSize:16,fontWeight:700,color:s.navy}}>{d.program}</div><div style={{fontSize:12,color:s.muted}}>{d.date}</div></div>
               </div>
               <span style={{background:d.color+"15",color:d.color,fontSize:10,fontWeight:700,padding:"4px 12px",borderRadius:5,letterSpacing:"0.5px"}}>{d.severity}</span>
@@ -1632,7 +1752,7 @@ export default function Jovair() {
         );})}
       </div>
       <div style={{background:"#f0fdfb",border:`1px solid ${s.teal}25`,borderRadius:16,padding:28,marginTop:32}}>
-        <div style={{fontSize:18,fontWeight:700,color:s.navy,marginBottom:14}}>🛡️ How to Protect Yourself</div>
+        <div style={{fontSize:18,fontWeight:700,color:s.navy,marginBottom:14}}>How to Protect Yourself</div>
         <div style={{fontSize:13,color:s.text,lineHeight:1.75}}>
           <strong>Earn and burn.</strong> Don't hoard miles — use them within 6-12 months of earning. Programs devalue constantly.
           <br/><br/><strong>Diversify.</strong> Keep points in transferable currencies (Chase UR, Amex MR) so you can move to whichever program offers the best value.
@@ -1650,18 +1770,18 @@ export default function Jovair() {
       <p style={{fontSize:14,color:s.muted,marginTop:6,marginBottom:32}}>Powerful utilities coming soon.</p>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(230px, 1fr))",gap:16}}>
         {[
-          {icon:"🗺️",title:"Transfer Partner Map",desc:"Visual map of credit card → airline transfer partnerships"},
-          {icon:"💰",title:"Points Portfolio",desc:"Connect accounts and see your total points value"},
-          {icon:"🔔",title:"Fare Alerts",desc:"Get notified when award space opens on your routes"},
-          {icon:"🧮",title:"Miles Calculator",desc:"Calculate any redemption value before booking"},
-          {icon:"📊",title:"Historical Pricing",desc:"Track how award prices change over time"},
-          {icon:"🌍",title:"Route Explorer",desc:"Best routes from your home airport by value"},
+          {title:"Transfer Partner Map",desc:"Visual map of credit card → airline transfer partnerships"},
+          {title:"Points Portfolio",desc:"Connect accounts and see your total points value"},
+          {title:"Fare Alerts",desc:"Get notified when award space opens on your routes"},
+          {title:"Miles Calculator",desc:"Calculate any redemption value before booking"},
+          {title:"Historical Pricing",desc:"Track how award prices change over time"},
+          {title:"Route Explorer",desc:"Best routes from your home airport by value"},
         ].map((t,i)=>(
           <div key={i} style={{background:"#fff",borderRadius:14,padding:22,border:"1px solid #e8eaef",position:"relative",transition:"all 0.2s"}}
             onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.06)";}}
             onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
             <span style={{position:"absolute",top:14,right:14,background:"#f3f4f6",color:s.muted,fontSize:9,fontWeight:700,padding:"3px 8px",borderRadius:4,letterSpacing:"0.5px"}}>COMING SOON</span>
-            <div style={{fontSize:34,marginBottom:12}}>{t.icon}</div>
+            <div style={{fontSize:11,fontWeight:700,color:s.teal,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:12}}>{String.fromCharCode(65+i)}</div>
             <div style={{fontSize:15,fontWeight:700,color:s.navy,marginBottom:6}}>{t.title}</div>
             <div style={{fontSize:13,color:s.muted,lineHeight:1.5}}>{t.desc}</div>
           </div>

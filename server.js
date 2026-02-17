@@ -257,8 +257,13 @@ app.post("/api/flights", async (req, res) => {
       }
     }
 
-    // Run searches in parallel (max 6 pairs)
-    const searches = pairs.slice(0, 6).map(async ({ orig, dest }) => {
+    // Run searches sequentially to avoid rate limits on Amadeus test API
+    // Limit to 3 pairs max on test environment
+    const maxPairs = process.env.AMADEUS_ENV === "production" ? 6 : 3;
+    for (const { orig, dest } of pairs.slice(0, maxPairs)) {
+      // Small delay between calls to avoid 429 rate limits
+      if (allOffers.length > 0) await new Promise(r => setTimeout(r, 350));
+
       const params = new URLSearchParams({
         originLocationCode: orig,
         destinationLocationCode: dest,
@@ -274,22 +279,29 @@ app.post("/api/flights", async (req, res) => {
       const url = `${baseUrl}/v2/shopping/flight-offers?${params}`;
       console.log(`[Amadeus] Searching: ${orig}→${dest} on ${departureDate || "flexible"}`);
 
-      const r = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      try {
+        const r = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      if (!r.ok) {
-        const errText = await r.text();
-        console.error(`[Amadeus] Error for ${orig}→${dest}: ${r.status} — ${errText}`);
-        return [];
+        if (!r.ok) {
+          const errText = await r.text();
+          console.error(`[Amadeus] Error for ${orig}→${dest}: ${r.status} — ${errText}`);
+          if (r.status === 429) {
+            // Rate limited — wait longer and continue
+            await new Promise(r => setTimeout(r, 1000));
+          }
+          continue;
+        }
+
+        const data = await r.json();
+        const offers = (data.data || []).map(offer => transformAmadeusOffer(offer, data.dictionaries));
+        allOffers.push(...offers);
+      } catch (fetchErr) {
+        console.error(`[Amadeus] Fetch error for ${orig}→${dest}:`, fetchErr.message);
+        continue;
       }
-
-      const data = await r.json();
-      return (data.data || []).map(offer => transformAmadeusOffer(offer, data.dictionaries));
-    });
-
-    const results = await Promise.all(searches);
-    for (const r of results) allOffers.push(...r);
+    }
 
     // Sort by price (ascending)
     allOffers.sort((a, b) => a.cash - b.cash);
