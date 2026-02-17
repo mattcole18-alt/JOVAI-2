@@ -940,7 +940,7 @@ async function parseAI(query) {
     if(q.includes("star alliance"))alliance="Star Alliance"; else if(q.includes("oneworld"))alliance="oneworld"; else if(q.includes("skyteam"))alliance="SkyTeam"; else if(q.includes("budget"))alliance="Budget";
 
     // Strip noise words BEFORE location detection so they don't interfere
-    const noiseWords = /\b(?:find|me|a|an|the|some|any|i want|i need|show|get|search|looking for|look for|can you|please|help|need|want|cheap|cheapest|affordable|expensive|luxury|flight|flights|ticket|tickets|booking|book|best|good|great|deal|deals|round trip|roundtrip|one way|oneway|nonstop|non-stop|direct)\b/g;
+    const noiseWords = /\b(?:find|me|a|an|the|some|any|i want|i need|show|get|search|looking for|look for|can you|please|help|need|want|cheap|cheapest|affordable|expensive|luxury|flight|flights|ticket|tickets|booking|book|best|good|great|deal|deals|round trip|roundtrip|one way|oneway|nonstop|non-stop|direct|january|february|march|april|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun|today|tomorrow|tonight|next week|next month|this weekend|next weekend|\d{1,2}(?:st|nd|rd|th)?|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|in \d+ (?:weeks?|months?))\b/g;
 
     // Smart origin/destination detection
     let origins=null, dests=null;
@@ -976,8 +976,19 @@ async function parseAI(query) {
 
     // Step 3: Detect origins from "from X", "out of X", "departing X"
     if (!origins) {
-      const outOf = q.match(/(?:out of|from|departing|leaving|flying out of)\s+(\w[\w\s]*?)(?:\s+to|\s+in|\s+on|\s+before|\s+after|\s*$)/);
+      const outOf = q.match(/(?:out of|from|departing|leaving|flying out of)\s+(\w[\w\s]*?)(?:\s+to|\s+in\b|\s+on\b|\s+before|\s+after|\s*$)/);
       if (outOf) origins = findAirports(outOf[1].trim(), "origin");
+    }
+
+    // Step 3.5: Handle "destination from origin" pattern (e.g. "caribbean from nyc")
+    if (!origins || !dests) {
+      const destFromOrig = q.match(/^(.+?)\s+from\s+(.+?)(?:\s+(?:in|on|using|for|under|around|before|right|just|after|during|next|this|between|by|within|until|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec|\d)\b|\s*$)/);
+      if (destFromOrig) {
+        const tryDest = findAirports(destFromOrig[1].replace(noiseWords,"").trim(), "dest");
+        const tryOrig = findAirports(destFromOrig[2].trim(), "origin");
+        if (tryDest && !dests) dests = tryDest;
+        if (tryOrig && !origins) origins = tryOrig;
+      }
     }
 
     // Step 4: NO "to" keyword — try to find TWO locations in the query
@@ -1131,6 +1142,68 @@ function parseDateHints(q) {
   // Month names
   const MONTH_NAMES = ["january","february","march","april","may","june","july","august","september","october","november","december"];
   const SHORT_MONTHS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+
+  // SPECIFIC DATES: "march 23rd", "march 23", "mar 23", "3/23", "3/23/26", "23 march"
+  // Check these BEFORE generic month matching so "march 23rd" doesn't just return all of March
+  for (let i=0;i<12;i++) {
+    // "march 23rd", "march 23", "mar 23rd", "mar 23"
+    const dayAfterMonth = q.match(new RegExp(`(?:${MONTH_NAMES[i]}|${SHORT_MONTHS[i]})\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b`));
+    if (dayAfterMonth) {
+      const day = parseInt(dayAfterMonth[1]);
+      if (day >= 1 && day <= 31) {
+        let s = new Date(y, i, day);
+        let e = new Date(y, i, day + 7); // show a week window around that date
+        if (s < now) { s = new Date(ny, i, day); e = new Date(ny, i, day + 7); }
+        const suffix = day===1||day===21||day===31?"st":day===2||day===22?"nd":day===3||day===23?"rd":"th";
+        return {start:s, end:e, label:`${MONTH_NAMES[i].charAt(0).toUpperCase()+MONTH_NAMES[i].slice(1)} ${day}${suffix}`};
+      }
+    }
+    // "23 march", "23rd of march"
+    const dayBeforeMonth = q.match(new RegExp(`(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?(?:${MONTH_NAMES[i]}|${SHORT_MONTHS[i]})`));
+    if (dayBeforeMonth) {
+      const day = parseInt(dayBeforeMonth[1]);
+      if (day >= 1 && day <= 31) {
+        let s = new Date(y, i, day);
+        let e = new Date(y, i, day + 7);
+        if (s < now) { s = new Date(ny, i, day); e = new Date(ny, i, day + 7); }
+        const suffix = day===1||day===21||day===31?"st":day===2||day===22?"nd":day===3||day===23?"rd":"th";
+        return {start:s, end:e, label:`${MONTH_NAMES[i].charAt(0).toUpperCase()+MONTH_NAMES[i].slice(1)} ${day}${suffix}`};
+      }
+    }
+  }
+
+  // Numeric date formats: "3/23", "03/23", "3/23/26", "3/23/2026"
+  const numericDate = q.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+  if (numericDate) {
+    const month = parseInt(numericDate[1]) - 1; // 0-indexed
+    const day = parseInt(numericDate[2]);
+    let dateYear = numericDate[3] ? parseInt(numericDate[3]) : y;
+    if (dateYear < 100) dateYear += 2000; // "26" → 2026
+    if (month >= 0 && month <= 11 && day >= 1 && day <= 31) {
+      let s = new Date(dateYear, month, day);
+      let e = new Date(dateYear, month, day + 7);
+      if (s < now && !numericDate[3]) { s = new Date(ny, month, day); e = new Date(ny, month, day + 7); }
+      const suffix = day===1||day===21||day===31?"st":day===2||day===22?"nd":day===3||day===23?"rd":"th";
+      return {start:s, end:e, label:`${MONTH_NAMES[month].charAt(0).toUpperCase()+MONTH_NAMES[month].slice(1)} ${day}${suffix}`};
+    }
+  }
+
+  // Date ranges: "march 20-27", "march 20 to 27", "mar 20 - mar 27"
+  for (let i=0;i<12;i++) {
+    const dateRange = q.match(new RegExp(`(?:${MONTH_NAMES[i]}|${SHORT_MONTHS[i]})\\s+(\\d{1,2})(?:st|nd|rd|th)?\\s*[-–to]+\\s*(?:(?:${MONTH_NAMES[i]}|${SHORT_MONTHS[i]})\\s+)?(\\d{1,2})(?:st|nd|rd|th)?`));
+    if (dateRange) {
+      const day1 = parseInt(dateRange[1]);
+      const day2 = parseInt(dateRange[2]);
+      if (day1 >= 1 && day1 <= 31 && day2 >= 1 && day2 <= 31) {
+        let s = new Date(y, i, day1);
+        let e = new Date(y, i, day2);
+        if (s < now) { s = new Date(ny, i, day1); e = new Date(ny, i, day2); }
+        return {start:s, end:e, label:`${MONTH_NAMES[i].charAt(0).toUpperCase()+MONTH_NAMES[i].slice(1)} ${day1}–${day2}`};
+      }
+    }
+  }
+
+  // Generic month matching (no specific day)
   for (let i=0;i<12;i++) {
     if (q.includes(MONTH_NAMES[i]) || (q.match(new RegExp(`\\b${SHORT_MONTHS[i]}\\b`)) && SHORT_MONTHS[i]!=="may")) {
       let s = new Date(y, i, 1);
@@ -1141,15 +1214,14 @@ function parseDateHints(q) {
   }
 
   // Relative timing
-  if (/next week/.test(q)) { const s=new Date(now.getTime()+5*864e5); const e=new Date(now.getTime()+12*864e5); return {start:s,end:e,label:"Next week"}; }
-  if (/next month/.test(q)) { const s=new Date(y,now.getMonth()+1,1); const e=new Date(y,now.getMonth()+2,0); return {start:s,end:e,label:"Next month"}; }
-  if (/this weekend/.test(q)) { const dow=now.getDay(); const daysToFri=((5-dow)+7)%7||7; const s=new Date(now.getTime()+daysToFri*864e5); const e=new Date(s.getTime()+2*864e5); return {start:s,end:e,label:"This weekend"}; }
-  if (/before|right before|just before/.test(q)) {
-    // "right before wimbledon" etc — already handled by events above, this catches orphan "before X"
-  }
-  if (/after/.test(q)) {
-    // similar — orphan "after X"
-  }
+  if (/\bnext week\b/.test(q)) { const s=new Date(now.getTime()+5*864e5); const e=new Date(now.getTime()+12*864e5); return {start:s,end:e,label:"Next week"}; }
+  if (/\bnext month\b/.test(q)) { const s=new Date(y,now.getMonth()+1,1); const e=new Date(y,now.getMonth()+2,0); return {start:s,end:e,label:"Next month"}; }
+  if (/\bthis weekend\b/.test(q)) { const dow=now.getDay(); const daysToFri=((5-dow)+7)%7||7; const s=new Date(now.getTime()+daysToFri*864e5); const e=new Date(s.getTime()+2*864e5); return {start:s,end:e,label:"This weekend"}; }
+  if (/\btonight\b|\btoday\b/.test(q)) { const s=new Date(now); const e=new Date(now.getTime()+864e5); return {start:s,end:e,label:"Today"}; }
+  if (/\btomorrow\b/.test(q)) { const s=new Date(now.getTime()+864e5); const e=new Date(now.getTime()+2*864e5); return {start:s,end:e,label:"Tomorrow"}; }
+  if (/\bnext weekend\b/.test(q)) { const dow=now.getDay(); const daysToFri=((5-dow)+7)%7+7; const s=new Date(now.getTime()+daysToFri*864e5); const e=new Date(s.getTime()+2*864e5); return {start:s,end:e,label:"Next weekend"}; }
+  if (/\bin (\d+) weeks?\b/.test(q)) { const m=q.match(/in (\d+) weeks?/); const w=parseInt(m[1]); const s=new Date(now.getTime()+w*7*864e5); const e=new Date(s.getTime()+7*864e5); return {start:s,end:e,label:`In ${w} week${w>1?"s":""}`}; }
+  if (/\bin (\d+) months?\b/.test(q)) { const m=q.match(/in (\d+) months?/); const mo=parseInt(m[1]); const s=new Date(y,now.getMonth()+mo,1); const e=new Date(y,now.getMonth()+mo+1,0); return {start:s,end:e,label:`In ${mo} month${mo>1?"s":""}`}; }
 
   // Default: flexible (7-90 days out)
   return {start:new Date(now.getTime()+7*864e5), end:new Date(now.getTime()+90*864e5), label:"Flexible"};
