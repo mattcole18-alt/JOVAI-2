@@ -116,6 +116,50 @@ const AIRLINES = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
+// AIRLINE BOOKING URLS — deep-links to each airline's booking page
+// ═══════════════════════════════════════════════════════════════
+
+const BOOKING_URLS = {
+  UA: (o,d,dt) => `https://www.united.com/en/us/fsr/choose-flights?f=${o}&t=${d}&d=${dt}&tt=1&at=1&sc=7&px=1&taxng=1&newHP=True&clm=7&st=bestmatches&tqp=R`,
+  AA: (o,d,dt) => `https://www.aa.com/booking/find-flights?origin=${o}&destination=${d}&departureDate=${dt}&tripType=oneWay&passengers=1`,
+  DL: (o,d,dt) => `https://www.delta.com/flight-search/search?originCity=${o}&destinationCity=${d}&departureDate=${dt}&paxCount=1`,
+  AC: (o,d,dt) => `https://www.aircanada.com/booking/search?org0=${o}&dest0=${d}&departure0=${dt}&ADT=1&lang=en-CA`,
+  BA: (o,d,dt) => `https://www.britishairways.com/travel/book/public/en_us?from=${o}&to=${d}&depDate=${dt}`,
+  LH: (o,d,dt) => `https://www.lufthansa.com/us/en/flight-search?origin=${o}&destination=${d}&outboundDate=${dt}`,
+  AF: (o,d,dt) => `https://www.airfrance.us/search/offer?origin=${o}&destination=${d}&outboundDate=${dt}`,
+  TK: (o,d,dt) => `https://www.turkishairlines.com/en-us/flights/?origin=${o}&destination=${d}&date=${dt}`,
+  EK: (o,d,dt) => `https://www.emirates.com/us/english/book/?origin=${o}&destination=${d}&departing=${dt}`,
+  QR: (o,d,dt) => `https://www.qatarairways.com/en/booking.html?widget=QR&origin=${o}&destination=${d}&departing=${dt}&pax=1`,
+  SQ: (o,d,dt) => `https://www.singaporeair.com/en_UK/ppsclub-krisflyer/flightsearch/?from=${o}&to=${d}&departDate=${dt}`,
+  NH: (o,d,dt) => `https://www.ana.co.jp/en/us/book-plan/search/international/?route=${o}${d}&departureDate=${dt}`,
+  CX: (o,d,dt) => `https://www.cathaypacific.com/cx/en_US/book-a-trip/flight-search.html?origin=${o}&destination=${d}&departDate=${dt}`,
+  JL: (o,d,dt) => `https://www.jal.co.jp/en/inter/booking/?origin=${o}&dest=${d}&depDate=${dt}`,
+  VS: (o,d,dt) => `https://www.virginatlantic.com/flight-search/select-flights?origin=${o}&destination=${d}&departureDate=${dt}`,
+  AS: (o,d,dt) => `https://www.alaskaair.com/search?org=${o}&des=${d}&dep=${dt}`,
+  B6: (o,d,dt) => `https://www.jetblue.com/booking/flights?from=${o}&to=${d}&depart=${dt}`,
+  ET: (o,d,dt) => `https://www.ethiopianairlines.com/book?origin=${o}&destination=${d}&departureDate=${dt}`,
+  LA: (o,d,dt) => `https://www.latamairlines.com/us/en/booking?origin=${o}&destination=${d}&departDate=${dt}`,
+  QF: (o,d,dt) => `https://www.qantas.com/us/en/book-a-trip/flights.html?from=${o}&to=${d}&date=${dt}`,
+  KE: (o,d,dt) => `https://www.koreanair.com/booking/search?tripType=OW&origin=${o}&destination=${d}&departDate=${dt}`,
+};
+
+function getBookingUrl(airlineCode, origin, dest, depDateObj) {
+  let dt = "";
+  if (depDateObj) {
+    try {
+      const d = depDateObj instanceof Date ? depDateObj : new Date(depDateObj);
+      if (!isNaN(d.getTime())) dt = d.toISOString().slice(0, 10);
+    } catch(_) {}
+  }
+  const builder = BOOKING_URLS[airlineCode];
+  if (builder) return builder(origin, dest, dt);
+  // Fallback: search airline website for the route
+  const al = AIRLINES.find(a => a.code === airlineCode);
+  const name = al ? al.name.split(" ")[0].toLowerCase() : airlineCode.toLowerCase();
+  return `https://www.google.com/search?q=${encodeURIComponent(`${al?.name || airlineCode} book flight ${origin} to ${dest}`)}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // AIRPORTS (Original + Expanded, deduped)
 // ═══════════════════════════════════════════════════════════════
 
@@ -1432,15 +1476,15 @@ export default function Jovair() {
                 </div>
               )}
               <div style={{display:"flex",gap:10,marginTop:16,flexWrap:"wrap"}}>
-                <button onClick={()=>window.open(`https://www.google.com/travel/flights?q=flights+from+${fl.origin}+to+${fl.destination}+${fl.depDate?fl.depDate.replace(/,/g,""):""}`, "_blank")}
+                <button onClick={()=>window.open(getBookingUrl(fl.airline.code, fl.origin, fl.destination, fl.depDateObj), "_blank")}
                   style={{background:`linear-gradient(135deg, ${s.teal}, #00c9a0)`,color:"#fff",border:"none",borderRadius:10,padding:"11px 22px",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:`0 2px 12px ${s.teal}30`,transition:"transform 0.15s"}}
                   onMouseEnter={e=>e.target.style.transform="translateY(-1px)"} onMouseLeave={e=>e.target.style.transform="none"}>
                   {fl.miles ? "Book with Miles →" : "Book Now →"}
                 </button>
-                <button onClick={()=>window.open(`https://www.google.com/travel/flights?q=${fl.airline.name}+${fl.origin}+to+${fl.destination}`, "_blank")}
+                <button onClick={()=>{const al=AIRLINES.find(a=>a.code===fl.airline.code); window.open(`https://www.${al?.name?.toLowerCase().replace(/[^a-z]/g,"")||fl.airline.code.toLowerCase()}.com`, "_blank");}}
                   style={{background:s.blue,color:"#fff",border:"none",borderRadius:10,padding:"11px 22px",fontSize:13,fontWeight:700,cursor:"pointer",transition:"transform 0.15s"}}
                   onMouseEnter={e=>e.target.style.transform="translateY(-1px)"} onMouseLeave={e=>e.target.style.transform="none"}>
-                  View on Google Flights
+                  Visit {fl.airline.name} →
                 </button>
               </div>
             </div>
