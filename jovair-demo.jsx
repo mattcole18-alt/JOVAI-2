@@ -1027,6 +1027,7 @@ export default function Jovair() {
   const [parsed, setParsed] = useState(null);
   const [flights, setFlights] = useState([]);
   const [sortBy, setSortBy] = useState("value");
+  const [sortDir, setSortDir] = useState("asc");
   const [filterAlliance, setFilterAlliance] = useState("All");
   const [filterTransfer, setFilterTransfer] = useState(null);
   const [filterNonstop, setFilterNonstop] = useState(false);
