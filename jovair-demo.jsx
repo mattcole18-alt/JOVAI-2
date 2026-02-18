@@ -932,42 +932,64 @@ function generateFlights(parsed) {
     });
   }
   // ── SELF-TRANSFER CONNECTIONS ──
-  // For routes where few/no direct flights exist, generate connecting options through hubs
-  // These are separate tickets booked independently — often much cheaper
-  const MAJOR_HUBS = ["JFK","EWR","ORD","LAX","SFO","ATL","DFW","IAH","MIA","SEA","BOS","IAD","DEN","CLT","PHL","DTW","MSP","SLC","LHR","CDG","AMS","FRA","IST","DXB","DOH","SIN","HKG","ICN","NRT"];
+  // Generate connecting itineraries: Leg1 airline flies orig→hub, Leg2 airline flies hub→dest
+  // Each airline must ACTUALLY serve that hub (it's in their hubs[] or gates[])
+  // Minimum 200mi per leg to avoid absurd 3-minute flights
+  const CONNECT_HUBS = ["JFK","EWR","ORD","LAX","SFO","ATL","DFW","IAH","MIA","SEA","BOS","IAD","DEN","LHR","CDG","AMS","FRA","IST","DXB","DOH"];
 
   {
-    // Generate self-transfer options — always add some connecting routes for best deals
-    const selfTransferTarget = results.length < 6 ? Math.max(4, 10 - results.length) : rand(2, 4);
+    const selfTransferTarget = results.length < 6 ? Math.max(3, 8 - results.length) : rand(2, 3);
     let stAtt = 0;
-    while (results.filter(r=>r.selfTransfer).length < selfTransferTarget && stAtt < selfTransferTarget * 12) {
+    while (results.filter(r=>r.selfTransfer).length < selfTransferTarget && stAtt < selfTransferTarget * 20) {
       stAtt++;
       const orig = pick(origins);
       const dest = pick(dests);
       if (orig === dest) continue;
 
-      // Find a plausible connecting hub between origin and destination
       const oReg = airportRegion(orig);
       const dReg = airportRegion(dest);
-      // Pick hubs that are geographically between or in the same region as origin
-      const possibleHubs = MAJOR_HUBS.filter(h => {
+      // For US→EU: connect through a US hub (fly domestic leg then transatlantic leg)
+      // For US→US: connect through a US hub
+      const possibleHubs = CONNECT_HUBS.filter(h => {
         if (h === orig || h === dest) return false;
         const hReg = airportRegion(h);
-        // Hub should be reachable from origin and destination should be reachable from hub
-        // For US origin → international: use US hubs
-        // For international → international: use major connecting hubs
-        if (oReg === US && dReg !== US) return hReg === US;
-        if (oReg === EU && dReg !== EU) return hReg === EU || hReg === ME;
-        if (oReg !== US && dReg === US) return hReg === US;
-        if (oReg === US && dReg === US) return hReg === US && h !== orig && h !== dest;
-        return true;
+        if (oReg === US && dReg === EU) return hReg === US; // US hub for connection
+        if (oReg === EU && dReg === US) return hReg === US;
+        if (oReg === US && dReg === US) return hReg === US;
+        if (oReg === EU && dReg === EU) return hReg === EU;
+        if (oReg === US && dReg === AS) return hReg === US;
+        if (oReg === US && dReg === ME) return hReg === US;
+        return hReg === US || hReg === EU;
       });
       if (!possibleHubs.length) continue;
       const hub = pick(possibleHubs);
 
-      // Find airlines for each leg
-      const leg1Airlines = airlines.filter(a => canFlyRoute(a, orig, hub));
-      const leg2Airlines = airlines.filter(a => canFlyRoute(a, hub, dest));
+      // Each leg must be 200+ miles (no 3-minute flights!)
+      const dist1Check = distMi(orig, hub);
+      const dist2Check = distMi(hub, dest);
+      if (dist1Check < 200 || dist2Check < 200) continue;
+
+      // Find airlines that ACTUALLY serve this route
+      // Extra validation: airline must genuinely connect to the hub (not just DOM_EU pass-through)
+      const leg1Airlines = airlines.filter(a => {
+        if (!canFlyRoute(a, orig, hub)) return false;
+        // Airline must actually serve the hub — check hubs[], usGates[], or be US Big 3
+        if (a.code === "UA" || a.code === "AA" || a.code === "DL") return true;
+        if (a.hubs && a.hubs.includes(hub)) return true;
+        if (a.usGates && a.usGates.includes(hub)) return true;
+        if (a.usGates && a.usGates.includes(orig)) return true;
+        if (a.type === "budget" && airportRegion(orig) === airportRegion(hub)) return true;
+        return false;
+      });
+      const leg2Airlines = airlines.filter(a => {
+        if (!canFlyRoute(a, hub, dest)) return false;
+        if (a.code === "UA" || a.code === "AA" || a.code === "DL") return true;
+        if (a.hubs && a.hubs.includes(hub)) return true;
+        if (a.usGates && a.usGates.includes(hub)) return true;
+        if (a.usGates && a.usGates.includes(dest)) return true;
+        if (a.type === "budget" && airportRegion(hub) === airportRegion(dest)) return true;
+        return false;
+      });
       if (!leg1Airlines.length || !leg2Airlines.length) continue;
 
       const al1 = pick(leg1Airlines);
