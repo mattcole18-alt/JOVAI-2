@@ -762,36 +762,48 @@ function generateFlights(parsed) {
     let cash, milesLo, milesHi;
     if (cabin==="Economy") {
       if (isLCC) {
-        cash = Math.round(dist * rand(0.035, 0.06));
+        cash = Math.round(dist * rand(0.03, 0.05));
       } else if (isDeal) {
-        cash = Math.round(dist * rand(0.045, 0.07));
+        cash = Math.round(dist * rand(0.04, 0.06));
       } else {
-        cash = Math.round(dist * rand(0.055, 0.09));
+        cash = Math.round(dist * rand(0.05, 0.075));
       }
       // Realistic minimums by distance
       if (dist < 1000) cash = Math.max(cash, 49);
       else if (dist < 3000) cash = Math.max(cash, 89);
       else if (dist < 5000) cash = Math.max(cash, 199);
       else cash = Math.max(cash, 259);
+      // REALISTIC CAPS — economy one-way fares
+      // Domestic: $49-$350 | Transatlantic: $200-$600 | Ultra long: $300-$900
+      if (dist < 1500) cash = Math.min(cash, 350);
+      else if (dist < 3500) cash = Math.min(cash, 450);
+      else if (dist < 5500) cash = Math.min(cash, 650);
+      else if (dist < 8000) cash = Math.min(cash, 800);
+      else cash = Math.min(cash, 950);
     } else if (cabin==="Premium Economy") {
       if (isLCC) {
-        cash = Math.round(dist * rand(0.05, 0.08));
+        cash = Math.round(dist * rand(0.05, 0.07));
       } else if (isDeal) {
-        cash = Math.round(dist * rand(0.06, 0.10));
+        cash = Math.round(dist * rand(0.06, 0.085));
       } else {
-        cash = Math.round(dist * rand(0.08, 0.13));
+        cash = Math.round(dist * rand(0.075, 0.11));
       }
       if (dist < 1000) cash = Math.max(cash, 79);
       else if (dist < 3000) cash = Math.max(cash, 149);
       else if (dist < 5000) cash = Math.max(cash, 299);
       else cash = Math.max(cash, 399);
+      // Caps
+      if (dist < 1500) cash = Math.min(cash, 500);
+      else if (dist < 3500) cash = Math.min(cash, 700);
+      else if (dist < 5500) cash = Math.min(cash, 1000);
+      else cash = Math.min(cash, 1400);
     } else if (cabin==="Business") {
       if (isLCC) {
-        cash = Math.round(dist * rand(0.12, 0.20));
+        cash = Math.round(dist * rand(0.10, 0.16));
       } else if (isDeal) {
-        cash = Math.round(dist * rand(0.15, 0.28));
+        cash = Math.round(dist * rand(0.12, 0.22));
       } else {
-        cash = Math.round(dist * rand(0.22, 0.40));
+        cash = Math.round(dist * rand(0.18, 0.32));
       }
       // Domestic business: $249+ short, $349+ medium. Intl: $699+ transatlantic, $999+ ultra
       if (dist < 1000) cash = Math.max(cash, 249);
@@ -800,17 +812,26 @@ function generateFlights(parsed) {
       else if (dist < 5000) cash = Math.max(cash, 799);
       else if (dist < 7000) cash = Math.max(cash, 999);
       else cash = Math.max(cash, 1199);
+      // Caps
+      if (dist < 1500) cash = Math.min(cash, 700);
+      else if (dist < 3500) cash = Math.min(cash, 1800);
+      else if (dist < 6000) cash = Math.min(cash, 3500);
+      else cash = Math.min(cash, 5500);
     } else {
       // First class
       if (isDeal) {
-        cash = Math.round(dist * rand(0.18, 0.30));
+        cash = Math.round(dist * rand(0.15, 0.25));
       } else {
-        cash = Math.round(dist * rand(0.25, 0.45));
+        cash = Math.round(dist * rand(0.22, 0.38));
       }
       if (dist < 1000) cash = Math.max(cash, 499);
       else if (dist < 3000) cash = Math.max(cash, 799);
       else if (dist < 5000) cash = Math.max(cash, 1499);
       else cash = Math.max(cash, 1999);
+      // Caps
+      if (dist < 3000) cash = Math.min(cash, 2500);
+      else if (dist < 6000) cash = Math.min(cash, 6000);
+      else cash = Math.min(cash, 9000);
     }
 
     // Miles based on real award charts — skewed toward sweet spots and deals
@@ -923,24 +944,34 @@ function generateFlights(parsed) {
         const isLCC = al.type === "budget" || al.type === "lowcost-longhaul";
         let c;
         if (cabin === "Economy") {
-          c = isLCC ? Math.round(dist * rand(0.03, 0.055)) : Math.round(dist * rand(0.04, 0.07));
+          c = isLCC ? Math.round(dist * rand(0.025, 0.045)) : Math.round(dist * rand(0.035, 0.06));
           if (dist < 1000) c = Math.max(c, 39);
           else if (dist < 3000) c = Math.max(c, 69);
           else if (dist < 5000) c = Math.max(c, 159);
           else c = Math.max(c, 219);
+          // Self-transfer legs should be cheap — that's the whole point
+          if (dist < 1500) c = Math.min(c, 250);
+          else if (dist < 3500) c = Math.min(c, 400);
+          else if (dist < 6000) c = Math.min(c, 550);
+          else c = Math.min(c, 700);
         } else if (cabin === "Premium Economy") {
-          c = Math.round(dist * rand(0.06, 0.10));
+          c = Math.round(dist * rand(0.05, 0.085));
           if (dist < 1000) c = Math.max(c, 69);
           else if (dist < 3000) c = Math.max(c, 119);
           else c = Math.max(c, 279);
+          if (dist < 3000) c = Math.min(c, 500);
+          else c = Math.min(c, 900);
         } else if (cabin === "Business") {
-          c = Math.round(dist * rand(0.12, 0.22));
+          c = Math.round(dist * rand(0.10, 0.18));
           if (dist < 1000) c = Math.max(c, 199);
           else if (dist < 3000) c = Math.max(c, 349);
           else c = Math.max(c, 699);
+          if (dist < 3000) c = Math.min(c, 1200);
+          else c = Math.min(c, 2500);
         } else {
-          c = Math.round(dist * rand(0.20, 0.38));
+          c = Math.round(dist * rand(0.18, 0.32));
           c = Math.max(c, 499);
+          c = Math.min(c, 4000);
         }
         return c;
       };
