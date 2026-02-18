@@ -65,8 +65,8 @@ const AIRLINES = [
   { code:"DL", name:"Delta Air Lines", program:"SkyMiles", alliance:"SkyTeam", color:"#003A70", transfers:["Amex MR"], routes:US|EU|AS|ME|SA|CA|AF|OC|DOM_US, type:"full-service", hubs:["ATL","MSP","DTW","SLC","SEA","JFK","BOS","LAX"] },
 
   // ═══ US CARRIERS — domestic + limited international ═══
-  // Alaska: NEW 2026 transatlantic from SEA only (LHR, KEF, FCO seasonal)
-  { code:"AS", name:"Alaska Airlines", program:"Mileage Plan", alliance:"oneworld", color:"#003580", transfers:["Chase UR","Bilt"], routes:US|EU|CA|AS|DOM_US, type:"full-service", hubs:["SEA","SFO","LAX","PDX","ANC"], usGates:["SEA"], euGates:["LHR","KEF","FCO"] },
+  // Alaska: NEW 2026 transatlantic from SEA only (LHR, KEF, FCO seasonal) — NO transpacific
+  { code:"AS", name:"Alaska Airlines", program:"Mileage Plan", alliance:"oneworld", color:"#003580", transfers:["Chase UR","Bilt"], routes:US|EU|CA|DOM_US, type:"full-service", hubs:["SEA","SFO","LAX","PDX","ANC"], usGates:["SEA"], euGates:["LHR","KEF","FCO"] },
   // JetBlue: JFK/BOS to specific EU cities only
   { code:"B6", name:"JetBlue", program:"TrueBlue", alliance:"Independent", color:"#003DA5", transfers:["Amex MR","Chase UR"], routes:US|EU|CA|DOM_US, type:"full-service", hubs:["JFK","BOS"], usGates:["JFK","BOS"], euGates:["LHR","LGW","CDG","DUB","EDI","AMS","BCN","MXP"] },
   // Hawaiian: HNL hub — Japan + Australia only for international
@@ -149,10 +149,14 @@ const AIRLINES = [
   { code:"Z0", name:"Norse Atlantic", program:null, alliance:"Budget", color:"#FF0000", transfers:[], routes:US|EU, type:"lowcost-longhaul", hubs:["LGW"], usGates:["JFK","MCO"], euGates:["LGW","FCO","ATH"] },
 
   // ═══ BUDGET — US DOMESTIC ═══
-  { code:"NK", name:"Spirit Airlines", program:null, alliance:"Budget", color:"#FFD700", transfers:[], routes:DOM_US|CA, type:"budget" },
+  // Spirit: huge US domestic point-to-point but NO Hawaii, some Caribbean/Latin
+  { code:"NK", name:"Spirit Airlines", program:null, alliance:"Budget", color:"#FFD700", transfers:[], routes:DOM_US|CA, type:"budget", noHawaii:true },
+  // Frontier: DEN-based, flies Hawaii from DEN
   { code:"F9", name:"Frontier Airlines", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:DOM_US|CA, type:"budget" },
+  // Southwest: flies everywhere including Hawaii
   { code:"WN", name:"Southwest Airlines", program:null, alliance:"Budget", color:"#0066CC", transfers:["Chase UR"], routes:DOM_US|CA, type:"budget" },
-  { code:"MX", name:"Breeze Airways", program:null, alliance:"Budget", color:"#0066CC", transfers:[], routes:DOM_US, type:"budget" },
+  // Breeze: secondary-city focus, NOT every major route, NO Hawaii
+  { code:"MX", name:"Breeze Airways", program:null, alliance:"Budget", color:"#0066CC", transfers:[], routes:DOM_US, type:"budget", noHawaii:true, hubs:["BDL","CHS","TPA","MCO","JAX","RIC","ORF","SAV","MSY","PBI","LAX","SFO","LAS","DEN","PHX"] },
 
   // ═══ BUDGET — EUROPE DOMESTIC ═══
   { code:"FR", name:"Ryanair", program:null, alliance:"Budget", color:"#003DA5", transfers:[], routes:DOM_EU|AF, type:"budget" },
@@ -160,8 +164,9 @@ const AIRLINES = [
   { code:"W6", name:"Wizz Air", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:DOM_EU|ME, type:"budget" },
   { code:"VY", name:"Vueling", program:null, alliance:"Budget", color:"#003DA5", transfers:[], routes:DOM_EU, type:"budget" },
 
-  // ═══ BUDGET — CANADA ═══
-  { code:"WS", name:"WestJet", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:DOM_US|CA|US, type:"budget" },
+  // ═══ CANADIAN BUDGET ═══
+  // WestJet: Canadian carrier, flies from Canadian hubs to US sun destinations — NOT all US domestic
+  { code:"WS", name:"WestJet", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:CA|US|EU|DOM_US, type:"full-service", hubs:["YYC","YYZ","YVR","YEG","YWG"], usGates:["LAX","SFO","LAS","PHX","DEN","MIA","FLL","MCO","HNL","JFK","BOS","MSP","AUS","TPA","SAN","PBI"] },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -685,9 +690,16 @@ function canFlyRoute(al, origCode, destCode) {
   if (oReg === dReg) {
     if (oReg === US) {
       if (!(al.routes & DOM_US)) return false;
-      // US Big 3 + budget can fly any US domestic
+      // US Big 3 can fly any US domestic
       if (al.code === "UA" || al.code === "AA" || al.code === "DL") return true;
-      if (al.type === "budget") return true;
+      // Budget carriers: point-to-point, but with restrictions
+      if (al.type === "budget") {
+        // Spirit doesn't fly Hawaii
+        if (al.noHawaii && (origCode === "HNL" || destCode === "HNL" || origCode === "OGG" || destCode === "OGG" || origCode === "KOA" || destCode === "KOA" || origCode === "LIH" || destCode === "LIH")) return false;
+        // Budget with hubs: at least one end must be hub
+        if (al.hubs && al.hubs.length > 0) return al.hubs.includes(origCode) || al.hubs.includes(destCode);
+        return true;
+      }
       // Everyone else: at least one end must be their hub
       if (al.hubs && al.hubs.length > 0) {
         return al.hubs.includes(origCode) || al.hubs.includes(destCode);
@@ -718,16 +730,25 @@ function canFlyRoute(al, origCode, destCode) {
   // US BIG 3 — can fly any cross-region route they serve (huge point-to-point networks)
   if (al.code === "UA" || al.code === "AA" || al.code === "DL") return true;
 
-  // BUDGET carriers — point-to-point, use usGates if defined
-  if (al.type === "budget" || al.type === "lowcost-longhaul") {
+  // LOW-COST LONG-HAUL — must fly through their hub (French Bee: ORY→MIA, not MIA→LHR)
+  if (al.type === "lowcost-longhaul") {
+    if (!al.hubs || !al.hubs.length) return true;
+    const touchesHub = al.hubs.includes(origCode) || al.hubs.includes(destCode);
+    if (!touchesHub) return false; // MUST have hub as one endpoint
+    // Check gates for the non-hub end
     if (oReg === US && al.usGates && !al.usGates.includes(origCode)) return false;
     if (dReg === US && al.usGates && !al.usGates.includes(destCode)) return false;
-    if (al.hubs) {
-      const touchesHub = al.hubs.includes(origCode) || al.hubs.includes(destCode);
-      if (!touchesHub) {
-        const touchesGate = (al.usGates && (al.usGates.includes(origCode) || al.usGates.includes(destCode)));
-        if (!touchesGate) return false;
-      }
+    if (oReg === EU && al.euGates && !al.euGates.includes(origCode)) return false;
+    if (dReg === EU && al.euGates && !al.euGates.includes(destCode)) return false;
+    return true;
+  }
+
+  // BUDGET carriers — point-to-point within region, use gates if defined
+  if (al.type === "budget") {
+    if (oReg === US && al.usGates && !al.usGates.includes(origCode)) return false;
+    if (dReg === US && al.usGates && !al.usGates.includes(destCode)) return false;
+    if (al.hubs && al.hubs.length > 0) {
+      return al.hubs.includes(origCode) || al.hubs.includes(destCode);
     }
     return true;
   }
@@ -751,18 +772,25 @@ function canFlyRoute(al, origCode, destCode) {
     return false;
   }
 
+  // ALSO check: US endpoint must be in usGates (if defined), EU endpoint must be in euGates
+  // This prevents Alaska LAX→LHR (LAX is hub but SEA is the only international usGate)
+  if (al.usGates) {
+    if (oReg === US && !al.usGates.includes(origCode)) return false;
+    if (dReg === US && !al.usGates.includes(destCode)) return false;
+  }
+  if (al.euGates) {
+    if (oReg === EU && !al.euGates.includes(origCode)) return false;
+    if (dReg === EU && !al.euGates.includes(destCode)) return false;
+  }
+
   // If origin is hub → dest must be a valid gate for its region
   if (origIsHub) {
-    if (dReg === US && al.usGates) return al.usGates.includes(destCode);
-    if (dReg === EU && al.euGates) return al.euGates.includes(destCode);
-    return true; // hub → other region, allow (e.g., ICN → BKK)
+    return true; // passed gate checks above
   }
 
   // If dest is hub → origin must be a valid gate for its region
   if (destIsHub) {
-    if (oReg === US && al.usGates) return al.usGates.includes(origCode);
-    if (oReg === EU && al.euGates) return al.euGates.includes(origCode);
-    return true;
+    return true; // passed gate checks above
   }
 
   return false;
