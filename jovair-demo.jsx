@@ -65,7 +65,7 @@ const AIRLINES = [
   { code:"DL", name:"Delta Air Lines", program:"SkyMiles", alliance:"SkyTeam", color:"#003A70", transfers:["Amex MR"], routes:US|EU|AS|ME|SA|CA|AF|OC|DOM_US, type:"full-service", hubs:["ATL","MSP","DTW","SLC","SEA","JFK","BOS","LAX"] },
   // US carriers — domestic + limited international
   { code:"AS", name:"Alaska Airlines", program:"Mileage Plan", alliance:"oneworld", color:"#003580", transfers:["Chase UR","Bilt"], routes:US|CA|DOM_US, type:"full-service", hubs:["SEA","SFO","LAX","PDX","ANC"] },
-  { code:"B6", name:"JetBlue", program:"TrueBlue", alliance:"Independent", color:"#003DA5", transfers:["Amex MR","Chase UR"], routes:US|EU|CA|DOM_US, type:"full-service", hubs:["JFK","BOS","FLL","MCO","LAX"] },
+  { code:"B6", name:"JetBlue", program:"TrueBlue", alliance:"Independent", color:"#003DA5", transfers:["Amex MR","Chase UR"], routes:US|EU|CA|DOM_US, type:"full-service", hubs:["JFK","BOS","FLL","MCO","LAX"], euGates:["LHR","LGW","AMS","CDG","EDI"] },
   { code:"HA", name:"Hawaiian Airlines", program:"HawaiianMiles", alliance:"Independent", color:"#00A0DF", transfers:["Amex MR","Chase UR"], routes:US|OC|AS|DOM_US, type:"full-service", hubs:["HNL","OGG","KOA","LIH"] },
   // Canadian
   { code:"AC", name:"Air Canada", program:"Aeroplan", alliance:"Star Alliance", color:"#d81e05", transfers:["Chase UR","Amex MR","Capital One","Bilt"], routes:US|EU|AS|ME|SA|CA|DOM_US, type:"full-service", hubs:["YYZ","YVR","YUL","YYC"] },
@@ -92,12 +92,12 @@ const AIRLINES = [
   { code:"AI", name:"Air India", program:"Flying Returns", alliance:"Star Alliance", color:"#0033CC", transfers:["Amex MR"], routes:US|EU|AS|ME|DOM_AS, type:"full-service", hubs:["DEL","BOM"], usGates:["JFK","EWR","ORD","SFO","IAD","SEA","LAX"], euGates:["LHR","CDG","FRA","BRU","MXP","VIE","BER","AMS"] },
   { code:"MH", name:"Malaysia Airlines", program:"Enrich", alliance:"oneworld", color:"#003C71", transfers:["Amex MR"], routes:EU|AS|ME|OC|DOM_AS, type:"full-service", hubs:["KUL"], euGates:["LHR","IST"] },
   // Middle East mega-carriers — fly from major gateways worldwide
-  { code:"EK", name:"Emirates", program:"Skywards", alliance:"Independent", color:"#D71921", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|AF|SA|OC, type:"full-service", hubs:["DXB"], usGates:["JFK","EWR","IAD","BOS","ORD","DFW","IAH","SFO","LAX","SEA","MIA","ATL","MCO","FLL"] },
-  { code:"QR", name:"Qatar Airways", program:"Privilege Club", alliance:"oneworld", color:"#5C0632", transfers:["Citi TYP"], routes:US|EU|AS|ME|AF|SA|OC, type:"full-service", hubs:["DOH"], usGates:["JFK","IAD","ORD","MIA","DFW","IAH","LAX","SFO","ATL","BOS","PHL","SEA"] },
+  { code:"EK", name:"Emirates", program:"Skywards", alliance:"Independent", color:"#D71921", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|AF|SA|OC, type:"full-service", hubs:["DXB"], usGates:["JFK","EWR","IAD","BOS","ORD","DFW","IAH","SFO","LAX","SEA","MIA","ATL","MCO","FLL"], euGates:["LHR","LGW","MAN","BHX","NCL","GLA","EDI","BER","FRA","MUC","DUS","HAM","CDG","LYS","AMS","FCO","MXP","VCE","BCN","MAD","AGP","ATH","IST","CPH","OSL","ARN","ZRH","GVA","VIE","PRG","BUD","WAW","DUB","LIS"] },
+  { code:"QR", name:"Qatar Airways", program:"Privilege Club", alliance:"oneworld", color:"#5C0632", transfers:["Citi TYP"], routes:US|EU|AS|ME|AF|SA|OC, type:"full-service", hubs:["DOH"], usGates:["JFK","IAD","ORD","MIA","DFW","IAH","LAX","SFO","ATL","BOS","PHL","SEA"], euGates:["LHR","MAN","EDI","BER","FRA","MUC","CDG","AMS","FCO","MXP","VCE","BCN","MAD","ATH","IST","CPH","OSL","ARN","ZRH","GVA","VIE","PRG","BUD","WAW","DUB","HEL"] },
   // African — very specific routes to US/EU
   { code:"ET", name:"Ethiopian Airlines", program:"ShebaMiles", alliance:"Star Alliance", color:"#078930", transfers:[], routes:US|EU|AS|ME|AF, type:"full-service", hubs:["ADD"], usGates:["IAD","JFK","EWR","ORD","IAH","LAX"], euGates:["LHR","CDG","FRA","FCO","MAD","BRU"] },
   // South American
-  { code:"LA", name:"LATAM", program:"Frequent Flyer", alliance:"Independent", color:"#000000", transfers:["Chase UR","Citi TYP"], routes:US|EU|SA|OC, type:"full-service", hubs:["SCL","GRU","LIM","BOG"], usGates:["JFK","MIA","LAX","ORD","IAH","DFW","MCO","ATL","BOS"] },
+  { code:"LA", name:"LATAM", program:"Frequent Flyer", alliance:"Independent", color:"#000000", transfers:["Chase UR","Citi TYP"], routes:US|EU|SA|OC, type:"full-service", hubs:["SCL","GRU","LIM","BOG"], usGates:["JFK","MIA","LAX","ORD","IAH","DFW","MCO","ATL","BOS"], euGates:["MAD","BCN","LHR","CDG","FRA","FCO","LIS"] },
   // Oceania
   { code:"QF", name:"Qantas", program:"Frequent Flyer", alliance:"oneworld", color:"#E0002A", transfers:[], routes:US|EU|AS|OC|DOM_AS, type:"full-service", hubs:["SYD","MEL"], usGates:["LAX","SFO","DFW","JFK"], euGates:["LHR","FCO"] },
   // Low-cost long-haul — specific routes only
@@ -629,6 +629,10 @@ function airportRegion(code) {
 }
 
 // Check if an airline can plausibly fly a route between two airports
+// STRICT RULE: Non-US/EU airlines must fly THROUGH their hub.
+// Korean Air flies JFK→ICN and ICN→LHR, never JFK→LHR.
+// European airlines fly their hub to US cities (BA: LHR→JFK, not CDG→JFK).
+// US Big 3 can fly anywhere they serve. Budget carriers are point-to-point within their region.
 function canFlyRoute(al, origCode, destCode) {
   const oReg = airportRegion(origCode);
   const dReg = airportRegion(destCode);
@@ -639,44 +643,63 @@ function canFlyRoute(al, origCode, destCode) {
     if (oReg === US) return (al.routes & DOM_US) > 0;
     if (oReg === EU) return (al.routes & DOM_EU) > 0;
     if (oReg === AS) return (al.routes & DOM_AS) > 0;
-    // For other regions (ME, AF, OC, SA), allow if airline serves that region
     return (al.routes & oReg) > 0;
   }
 
   // Cross-region: airline must serve BOTH regions
   if (!((al.routes & oReg) > 0 && (al.routes & dReg) > 0)) return false;
 
-  // Hub-based gate checking — international airlines only fly from specific cities
-  // US origin → foreign airline: origin must be in airline's usGates
-  if (oReg === US && al.usGates) {
-    if (!al.usGates.includes(origCode)) return false;
-  }
-  // US destination → foreign airline: dest must be in airline's usGates
-  if (dReg === US && al.usGates) {
-    if (!al.usGates.includes(destCode)) return false;
-  }
-  // EU origin → Asian/ME/AF airline: origin must be in airline's euGates
-  if (oReg === EU && al.euGates) {
-    if (!al.euGates.includes(origCode)) return false;
-  }
-  // EU destination → Asian/ME/AF airline: dest must be in airline's euGates
-  if (dReg === EU && al.euGates) {
-    if (!al.euGates.includes(destCode)) return false;
-  }
-  // Flights touching airline's hub region — at least one end should be a hub or gate
-  if (al.hubs) {
-    const touchesHub = al.hubs.includes(origCode) || al.hubs.includes(destCode);
-    const touchesGate = (al.usGates && (al.usGates.includes(origCode) || al.usGates.includes(destCode))) ||
-                        (al.euGates && (al.euGates.includes(origCode) || al.euGates.includes(destCode)));
-    // If neither end is a hub or a known gate, this route is unlikely
-    if (!touchesHub && !touchesGate) {
-      // Exception: US Big 3 and budget carriers don't need hub checking (they fly point-to-point)
-      if (al.code !== "UA" && al.code !== "AA" && al.code !== "DL" &&
-          al.type !== "budget") return false;
+  // US BIG 3 — can fly any cross-region route they serve (huge point-to-point networks)
+  if (al.code === "UA" || al.code === "AA" || al.code === "DL") return true;
+
+  // BUDGET carriers — point-to-point, use usGates if defined
+  if (al.type === "budget" || al.type === "lowcost-longhaul") {
+    if (oReg === US && al.usGates && !al.usGates.includes(origCode)) return false;
+    if (dReg === US && al.usGates && !al.usGates.includes(destCode)) return false;
+    if (al.hubs) {
+      const touchesHub = al.hubs.includes(origCode) || al.hubs.includes(destCode);
+      if (!touchesHub) {
+        const touchesGate = (al.usGates && (al.usGates.includes(origCode) || al.usGates.includes(destCode)));
+        if (!touchesGate) return false;
+      }
     }
+    return true;
   }
 
-  return true;
+  // ── ALL OTHER AIRLINES: Hub-spoke model ──
+  // At least ONE end of the flight must be one of the airline's hubs.
+  // The OTHER end must be a valid gate for that region.
+  // Example: Korean Air hub=ICN → can fly JFK→ICN (JFK is usGate) or ICN→LHR (LHR is euGate)
+  //          but NEVER JFK→LHR (neither end is ICN)
+  if (!al.hubs || !al.hubs.length) return true; // no hub data = allow
+
+  const origIsHub = al.hubs.includes(origCode);
+  const destIsHub = al.hubs.includes(destCode);
+
+  // At least one end must be a hub
+  if (!origIsHub && !destIsHub) {
+    // Exception: some airlines operate gateway-to-gateway within their home region
+    // E.g., BA flies LHR→JFK and LGW→JFK — both hubs to US gates
+    // But BA would never fly CDG→JFK (CDG isn't their hub)
+    // For European airlines with multiple hubs, check if origin is a hub for EU→US
+    return false;
+  }
+
+  // If origin is hub → dest must be a valid gate for its region
+  if (origIsHub) {
+    if (dReg === US && al.usGates) return al.usGates.includes(destCode);
+    if (dReg === EU && al.euGates) return al.euGates.includes(destCode);
+    return true; // hub → other region, allow (e.g., ICN → BKK)
+  }
+
+  // If dest is hub → origin must be a valid gate for its region
+  if (destIsHub) {
+    if (oReg === US && al.usGates) return al.usGates.includes(origCode);
+    if (oReg === EU && al.euGates) return al.euGates.includes(origCode);
+    return true;
+  }
+
+  return false;
 }
 
 function generateFlights(parsed) {
