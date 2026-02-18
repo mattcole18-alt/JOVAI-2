@@ -59,67 +59,108 @@ const US=1,EU=2,AS=4,ME=8,AF=16,SA=32,OC=64,CA=128; // bitmask regions
 const DOM_US=256,DOM_EU=512,DOM_AS=1024; // domestic route flags
 
 const AIRLINES = [
-  // US Big 3 — fly everywhere from major US hubs
+  // ═══ US BIG 3 — fly everywhere from their hubs, exempt from hub-spoke check ═══
   { code:"UA", name:"United Airlines", program:"MileagePlus", alliance:"Star Alliance", color:"#0032A0", transfers:["Chase UR","Bilt"], routes:US|EU|AS|ME|SA|CA|OC|DOM_US, type:"full-service", hubs:["EWR","IAD","IAH","SFO","ORD","DEN","LAX"] },
-  { code:"AA", name:"American Airlines", program:"AAdvantage", alliance:"oneworld", color:"#0078D2", transfers:["Citi TYP","Bilt"], routes:US|EU|AS|ME|SA|CA|DOM_US, type:"full-service", hubs:["DFW","CLT","MIA","PHL","ORD","PHX","JFK","LAX"] },
+  { code:"AA", name:"American Airlines", program:"AAdvantage", alliance:"oneworld", color:"#0078D2", transfers:["Citi TYP","Bilt"], routes:US|EU|AS|SA|CA|DOM_US, type:"full-service", hubs:["DFW","CLT","MIA","PHL","ORD","PHX","JFK","LAX"] },
   { code:"DL", name:"Delta Air Lines", program:"SkyMiles", alliance:"SkyTeam", color:"#003A70", transfers:["Amex MR"], routes:US|EU|AS|ME|SA|CA|AF|OC|DOM_US, type:"full-service", hubs:["ATL","MSP","DTW","SLC","SEA","JFK","BOS","LAX"] },
-  // US carriers — domestic + limited international
-  { code:"AS", name:"Alaska Airlines", program:"Mileage Plan", alliance:"oneworld", color:"#003580", transfers:["Chase UR","Bilt"], routes:US|CA|DOM_US, type:"full-service", hubs:["SEA","SFO","LAX","PDX","ANC"] },
-  { code:"B6", name:"JetBlue", program:"TrueBlue", alliance:"Independent", color:"#003DA5", transfers:["Amex MR","Chase UR"], routes:US|EU|CA|DOM_US, type:"full-service", hubs:["JFK","BOS","FLL","MCO","LAX"], euGates:["LHR","LGW","AMS","CDG","EDI"] },
-  { code:"HA", name:"Hawaiian Airlines", program:"HawaiianMiles", alliance:"Independent", color:"#00A0DF", transfers:["Amex MR","Chase UR"], routes:US|OC|AS|DOM_US, type:"full-service", hubs:["HNL","OGG","KOA","LIH"] },
-  // Canadian
-  { code:"AC", name:"Air Canada", program:"Aeroplan", alliance:"Star Alliance", color:"#d81e05", transfers:["Chase UR","Amex MR","Capital One","Bilt"], routes:US|EU|AS|ME|SA|CA|DOM_US, type:"full-service", hubs:["YYZ","YVR","YUL","YYC"] },
-  // European legacy — transatlantic from specific US gateways
-  { code:"LH", name:"Lufthansa", program:"Miles & More", alliance:"Star Alliance", color:"#05164d", transfers:["Amex MR"], routes:US|EU|AS|ME|AF|SA|DOM_EU, type:"full-service", hubs:["FRA","MUC"], usGates:["JFK","EWR","IAD","ORD","SFO","LAX","MIA","BOS","DFW","IAH","DEN","SEA","ATL","CLT","DTW"] },
-  { code:"BA", name:"British Airways", program:"Avios", alliance:"oneworld", color:"#075AAA", transfers:["Chase UR","Amex MR","Capital One"], routes:US|EU|AS|ME|AF|SA|CA|DOM_EU, type:"full-service", hubs:["LHR","LGW"], usGates:["JFK","EWR","BOS","PHL","IAD","ORD","MIA","DFW","IAH","SFO","LAX","SEA","ATL","CLT","PHX","DEN","AUS","BNA","MSY","TPA","RDU"] },
-  { code:"AF", name:"Air France/KLM", program:"Flying Blue", alliance:"SkyTeam", color:"#002157", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|AF|SA|CA|DOM_EU, type:"full-service", hubs:["CDG","AMS"], usGates:["JFK","ATL","IAD","BOS","ORD","MIA","SFO","LAX","IAH","DTW","MSP","SEA","DFW"] },
-  { code:"VS", name:"Virgin Atlantic", program:"Flying Club", alliance:"SkyTeam", color:"#E01224", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|CA, type:"full-service", hubs:["LHR","MAN"], usGates:["JFK","BOS","ATL","MIA","LAX","SFO","IAD","SEA","DFW","MCO","TPA","LAS"] },
-  { code:"LX", name:"Swiss International", program:"SWISS Miles & More", alliance:"Star Alliance", color:"#DC143C", transfers:["Amex MR","Chase UR"], routes:US|EU|AS|ME|AF|DOM_EU, type:"full-service", hubs:["ZRH","GVA"], usGates:["JFK","EWR","ORD","MIA","SFO","LAX","BOS"] },
-  { code:"SK", name:"SAS", program:"EuroBonus", alliance:"Star Alliance", color:"#003580", transfers:["Amex MR"], routes:US|EU|AS|DOM_EU, type:"full-service", hubs:["CPH","ARN","OSL"], usGates:["EWR","ORD","MIA","LAX","SFO","IAD","BOS"] },
-  { code:"IB", name:"Iberia", program:"Avios", alliance:"oneworld", color:"#FFC72C", transfers:["Amex MR","Chase UR","Citi TYP"], routes:US|EU|SA|AF|DOM_EU, type:"full-service", hubs:["MAD","BCN"], usGates:["JFK","MIA","ORD","BOS","LAX","DFW","IAD"] },
-  { code:"AY", name:"Finnair", program:"Finnair Plus", alliance:"oneworld", color:"#003580", transfers:["Amex MR"], routes:US|EU|AS|DOM_EU, type:"full-service", hubs:["HEL"], usGates:["JFK","ORD","LAX","MIA","DFW","SEA"] },
-  // Turkish — massive network but specific US cities
-  { code:"TK", name:"Turkish Airlines", program:"Miles&Smiles", alliance:"Star Alliance", color:"#C8102E", transfers:["Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|AF|SA|CA|DOM_EU, type:"full-service", hubs:["IST"], usGates:["JFK","EWR","IAD","ORD","LAX","SFO","MIA","ATL","IAH","BOS","DFW","SEA"] },
-  // Asian carriers — only fly to major US/EU gateways
-  { code:"SQ", name:"Singapore Airlines", program:"KrisFlyer", alliance:"Star Alliance", color:"#F0AB00", transfers:["Chase UR","Amex MR","Citi TYP","Capital One"], routes:US|EU|AS|OC|ME|DOM_AS, type:"full-service", hubs:["SIN"], usGates:["JFK","EWR","LAX","SFO","IAH","SEA"], euGates:["LHR","FRA","AMS","FCO","BCN","CDG","MUC","ZRH","MXP"] },
-  { code:"NH", name:"ANA", program:"Mileage Club", alliance:"Star Alliance", color:"#00467F", transfers:["Amex MR"], routes:US|EU|AS|DOM_AS, type:"full-service", hubs:["NRT","HND"], usGates:["JFK","ORD","LAX","SFO","IAH","SEA","IAD","HNL"], euGates:["LHR","FRA","CDG","MUC","BRU","VIE"] },
-  { code:"CX", name:"Cathay Pacific", program:"Asia Miles", alliance:"oneworld", color:"#005D63", transfers:["Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|OC|ME|DOM_AS, type:"full-service", hubs:["HKG"], usGates:["JFK","EWR","BOS","LAX","SFO","ORD","DFW"], euGates:["LHR","FRA","AMS","CDG","MXP","MAD","BCN","FCO"] },
-  { code:"JL", name:"Japan Airlines", program:"Mileage Bank", alliance:"oneworld", color:"#C8102E", transfers:["Chase UR","Citi TYP"], routes:US|EU|AS|OC|DOM_AS, type:"full-service", hubs:["NRT","HND"], usGates:["JFK","ORD","LAX","SFO","SEA","DFW","BOS","HNL","DEN"], euGates:["LHR","CDG","FRA","HEL"] },
-  { code:"KE", name:"Korean Air", program:"SKYPASS", alliance:"SkyTeam", color:"#003D82", transfers:["Amex MR"], routes:US|EU|AS|OC|DOM_AS, type:"full-service", hubs:["ICN"], usGates:["JFK","LAX","SFO","ATL","SEA","IAH","DFW","ORD","IAD","HNL","LAS"], euGates:["LHR","CDG","FRA","AMS","FCO","PRG","MAD","ZRH","VIE"] },
-  { code:"BR", name:"EVA Air", program:"Eva Air Infinity Mileage Lands", alliance:"Star Alliance", color:"#0066CC", transfers:["Amex MR"], routes:US|EU|AS|OC|DOM_AS, type:"full-service", hubs:["TPE"], usGates:["JFK","LAX","SFO","SEA","ORD","IAH"], euGates:["LHR","CDG","AMS","VIE","MUC"] },
-  { code:"CI", name:"China Airlines", program:"Dynasty Flyer", alliance:"SkyTeam", color:"#0066CC", transfers:["Amex MR"], routes:US|EU|AS|OC|DOM_AS, type:"full-service", hubs:["TPE"], usGates:["JFK","LAX","SFO","ORD","HNL"], euGates:["LHR","FRA","AMS","FCO","VIE"] },
-  { code:"CA", name:"Air China", program:"Frequent Flyer Program", alliance:"Star Alliance", color:"#FF0000", transfers:["Amex MR"], routes:US|EU|AS|DOM_AS, type:"full-service", hubs:["PEK","PVG"], usGates:["JFK","LAX","SFO","IAD","EWR"], euGates:["LHR","FRA","CDG","FCO","MAD"] },
-  { code:"AI", name:"Air India", program:"Flying Returns", alliance:"Star Alliance", color:"#0033CC", transfers:["Amex MR"], routes:US|EU|AS|ME|DOM_AS, type:"full-service", hubs:["DEL","BOM"], usGates:["JFK","EWR","ORD","SFO","IAD","SEA","LAX"], euGates:["LHR","CDG","FRA","BRU","MXP","VIE","BER","AMS"] },
-  { code:"MH", name:"Malaysia Airlines", program:"Enrich", alliance:"oneworld", color:"#003C71", transfers:["Amex MR"], routes:EU|AS|ME|OC|DOM_AS, type:"full-service", hubs:["KUL"], euGates:["LHR","IST"] },
-  // Middle East mega-carriers — fly from major gateways worldwide
-  { code:"EK", name:"Emirates", program:"Skywards", alliance:"Independent", color:"#D71921", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|AF|SA|OC, type:"full-service", hubs:["DXB"], usGates:["JFK","EWR","IAD","BOS","ORD","DFW","IAH","SFO","LAX","SEA","MIA","ATL","MCO","FLL"], euGates:["LHR","LGW","MAN","BHX","NCL","GLA","EDI","BER","FRA","MUC","DUS","HAM","CDG","LYS","AMS","FCO","MXP","VCE","BCN","MAD","AGP","ATH","IST","CPH","OSL","ARN","ZRH","GVA","VIE","PRG","BUD","WAW","DUB","LIS"] },
-  { code:"QR", name:"Qatar Airways", program:"Privilege Club", alliance:"oneworld", color:"#5C0632", transfers:["Citi TYP"], routes:US|EU|AS|ME|AF|SA|OC, type:"full-service", hubs:["DOH"], usGates:["JFK","IAD","ORD","MIA","DFW","IAH","LAX","SFO","ATL","BOS","PHL","SEA"], euGates:["LHR","MAN","EDI","BER","FRA","MUC","CDG","AMS","FCO","MXP","VCE","BCN","MAD","ATH","IST","CPH","OSL","ARN","ZRH","GVA","VIE","PRG","BUD","WAW","DUB","HEL"] },
-  // African — very specific routes to US/EU
-  { code:"ET", name:"Ethiopian Airlines", program:"ShebaMiles", alliance:"Star Alliance", color:"#078930", transfers:[], routes:US|EU|AS|ME|AF, type:"full-service", hubs:["ADD"], usGates:["IAD","JFK","EWR","ORD","IAH","LAX"], euGates:["LHR","CDG","FRA","FCO","MAD","BRU"] },
-  // South American
-  { code:"LA", name:"LATAM", program:"Frequent Flyer", alliance:"Independent", color:"#000000", transfers:["Chase UR","Citi TYP"], routes:US|EU|SA|OC, type:"full-service", hubs:["SCL","GRU","LIM","BOG"], usGates:["JFK","MIA","LAX","ORD","IAH","DFW","MCO","ATL","BOS"], euGates:["MAD","BCN","LHR","CDG","FRA","FCO","LIS"] },
-  // Oceania
-  { code:"QF", name:"Qantas", program:"Frequent Flyer", alliance:"oneworld", color:"#E0002A", transfers:[], routes:US|EU|AS|OC|DOM_AS, type:"full-service", hubs:["SYD","MEL"], usGates:["LAX","SFO","DFW","JFK"], euGates:["LHR","FCO"] },
-  // Low-cost long-haul — specific routes only
-  { code:"YP", name:"Air Premia", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:US|AS|DOM_AS, type:"lowcost-longhaul", hubs:["ICN"], usGates:["JFK","LAX","SFO","EWR","HNL"] },
-  { code:"ZG", name:"ZIPAIR", program:null, alliance:"Budget", color:"#000000", transfers:[], routes:US|AS|DOM_AS, type:"lowcost-longhaul", hubs:["NRT"], usGates:["LAX","SFO","SJC","HNL","SEA"] },
-  { code:"BF", name:"French Bee", program:null, alliance:"Budget", color:"#FF6B00", transfers:[], routes:US|EU, type:"lowcost-longhaul", hubs:["ORY"], usGates:["SFO","LAX","EWR","MIA"] },
-  { code:"DE", name:"Condor", program:null, alliance:"Budget", color:"#FFD700", transfers:[], routes:US|EU, type:"lowcost-longhaul", hubs:["FRA"], usGates:["JFK","SEA","LAX","SFO","PDX","ANC","MSP","ATL","BOS","MCO","TPA","PHL","BWI"] },
-  { code:"Z0", name:"Norse Atlantic", program:null, alliance:"Budget", color:"#FF0000", transfers:[], routes:US|EU, type:"lowcost-longhaul", hubs:["LGW","OSL","BER"], usGates:["JFK","LAX","MIA","MCO","FLL"] },
-  { code:"OG", name:"PLAY", program:null, alliance:"Budget", color:"#FFD700", transfers:[], routes:US|EU, type:"lowcost-longhaul", hubs:["KEF"], usGates:["BWI","BOS","JFK","IAD","STL"] },
-  { code:"H9", name:"Himalaya Airlines", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:AS|ME, type:"lowcost-longhaul", hubs:["KTM"] },
-  // Budget — US domestic
+
+  // ═══ US CARRIERS — domestic + limited international ═══
+  // Alaska: NEW 2026 transatlantic from SEA only (LHR, KEF, FCO seasonal)
+  { code:"AS", name:"Alaska Airlines", program:"Mileage Plan", alliance:"oneworld", color:"#003580", transfers:["Chase UR","Bilt"], routes:US|EU|CA|AS|DOM_US, type:"full-service", hubs:["SEA","SFO","LAX","PDX","ANC"], usGates:["SEA"], euGates:["LHR","KEF","FCO"] },
+  // JetBlue: JFK/BOS to specific EU cities only
+  { code:"B6", name:"JetBlue", program:"TrueBlue", alliance:"Independent", color:"#003DA5", transfers:["Amex MR","Chase UR"], routes:US|EU|CA|DOM_US, type:"full-service", hubs:["JFK","BOS"], usGates:["JFK","BOS"], euGates:["LHR","LGW","CDG","DUB","EDI","AMS","BCN","MXP"] },
+  // Hawaiian: HNL hub — Japan + Australia only for international
+  { code:"HA", name:"Hawaiian Airlines", program:"HawaiianMiles", alliance:"Independent", color:"#00A0DF", transfers:["Amex MR","Chase UR"], routes:US|OC|AS|DOM_US, type:"full-service", hubs:["HNL","OGG","KOA","LIH"], usGates:["HNL"], euGates:[] },
+
+  // ═══ CANADIAN ═══
+  { code:"AC", name:"Air Canada", program:"Aeroplan", alliance:"Star Alliance", color:"#d81e05", transfers:["Chase UR","Amex MR","Capital One","Bilt"], routes:US|EU|AS|SA|CA|DOM_US, type:"full-service", hubs:["YYZ","YVR","YUL"] },
+
+  // ═══ EUROPEAN LEGACY — fly from their EU hub to specific US gateways ═══
+  // Lufthansa: FRA/MUC → many US cities
+  { code:"LH", name:"Lufthansa", program:"Miles & More", alliance:"Star Alliance", color:"#05164d", transfers:["Amex MR"], routes:US|EU|AS|ME|AF|SA|DOM_EU, type:"full-service", hubs:["FRA","MUC"], usGates:["JFK","EWR","IAD","ORD","SFO","LAX","MIA","BOS","CLT","DEN","IAH","MSP","MCO","PHL","PHX","SAN","SEA","LAS"] },
+  // BA: LHR → tons of US cities
+  { code:"BA", name:"British Airways", program:"Avios", alliance:"oneworld", color:"#075AAA", transfers:["Chase UR","Amex MR","Capital One"], routes:US|EU|AS|ME|AF|SA|CA|DOM_EU, type:"full-service", hubs:["LHR","LGW"], usGates:["JFK","EWR","BOS","PHL","IAD","ORD","MIA","DFW","IAH","SFO","LAX","SEA","ATL","CLT","PHX","DEN","AUS","BNA","TPA","DTW","LAS","SAN","MCO","STL"] },
+  // Air France CDG + KLM AMS → US cities
+  { code:"AF", name:"Air France/KLM", program:"Flying Blue", alliance:"SkyTeam", color:"#002157", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|AF|SA|CA|DOM_EU, type:"full-service", hubs:["CDG","AMS"], usGates:["JFK","BOS","ORD","DFW","DEN","DTW","IAH","LAS","LAX","MIA","MSP","MSY","EWR","MCO","PHX","RDU","SAN","SFO","SEA","IAD","ATL","PHL"] },
+  // Virgin Atlantic: LHR/MAN → US cities
+  { code:"VS", name:"Virgin Atlantic", program:"Flying Club", alliance:"SkyTeam", color:"#E01224", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|DOM_EU, type:"full-service", hubs:["LHR","MAN"], usGates:["JFK","BOS","ATL","MIA","LAX","SFO","IAD","SEA","MCO","TPA","LAS"] },
+  // Swiss: ZRH/GVA → US cities
+  { code:"LX", name:"Swiss International", program:"SWISS Miles & More", alliance:"Star Alliance", color:"#DC143C", transfers:["Amex MR","Chase UR"], routes:US|EU|AS|ME|AF|DOM_EU, type:"full-service", hubs:["ZRH","GVA"], usGates:["JFK","BOS","ORD","LAX","MIA","SFO","IAD"] },
+  // SAS: CPH → US cities
+  { code:"SK", name:"SAS", program:"EuroBonus", alliance:"Star Alliance", color:"#003580", transfers:["Amex MR"], routes:US|EU|AS|DOM_EU, type:"full-service", hubs:["CPH","ARN","OSL"], usGates:["JFK","ATL","BOS","ORD","MIA","LAX","SFO","SEA","IAD"] },
+  // Iberia: MAD → US cities ONLY (not London!)
+  { code:"IB", name:"Iberia", program:"Avios", alliance:"oneworld", color:"#FFC72C", transfers:["Amex MR","Chase UR","Citi TYP"], routes:US|EU|SA|DOM_EU, type:"full-service", hubs:["MAD"], usGates:["JFK","EWR","BOS","ORD","DFW","LAX","MIA","SFO","IAD","MCO"] },
+  // Finnair: HEL → JFK and MIA ONLY
+  { code:"AY", name:"Finnair", program:"Finnair Plus", alliance:"oneworld", color:"#003580", transfers:["Amex MR"], routes:US|EU|AS|DOM_EU, type:"full-service", hubs:["HEL"], usGates:["JFK","MIA"] },
+
+  // ═══ TURKISH — huge network from IST ═══
+  { code:"TK", name:"Turkish Airlines", program:"Miles&Smiles", alliance:"Star Alliance", color:"#C8102E", transfers:["Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|AF|SA|CA|DOM_EU, type:"full-service", hubs:["IST"], usGates:["JFK","EWR","IAD","ORD","LAX","SFO","MIA","ATL","IAH","BOS","DFW","SEA","DEN","DTW"] },
+
+  // ═══ ASIAN CARRIERS — fly from their Asian hub to specific US/EU gateways ═══
+  // Singapore: SIN → 5 US cities
+  { code:"SQ", name:"Singapore Airlines", program:"KrisFlyer", alliance:"Star Alliance", color:"#F0AB00", transfers:["Chase UR","Amex MR","Citi TYP","Capital One"], routes:US|EU|AS|OC|ME|DOM_AS, type:"full-service", hubs:["SIN"], usGates:["JFK","EWR","LAX","SFO","SEA"], euGates:["LHR","FRA","AMS","FCO","BCN","CDG","MUC","ZRH","MXP"] },
+  // ANA: NRT/HND → 8 US cities
+  { code:"NH", name:"ANA", program:"Mileage Club", alliance:"Star Alliance", color:"#00467F", transfers:["Amex MR"], routes:US|EU|AS|DOM_AS, type:"full-service", hubs:["NRT","HND"], usGates:["JFK","ORD","LAX","SFO","IAH","SEA","IAD","HNL","BOS","SAN"], euGates:["LHR","FRA","CDG","MUC","BRU","VIE"] },
+  // Cathay Pacific: HKG → 7 US cities
+  { code:"CX", name:"Cathay Pacific", program:"Asia Miles", alliance:"oneworld", color:"#005D63", transfers:["Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|OC|ME|DOM_AS, type:"full-service", hubs:["HKG"], usGates:["JFK","BOS","LAX","SFO","ORD","DFW","SEA"], euGates:["LHR","FRA","AMS","CDG","MXP","MAD","BCN","FCO"] },
+  // JAL: NRT/HND → 8 US cities
+  { code:"JL", name:"Japan Airlines", program:"Mileage Bank", alliance:"oneworld", color:"#C8102E", transfers:["Chase UR","Citi TYP"], routes:US|EU|AS|OC|DOM_AS, type:"full-service", hubs:["NRT","HND"], usGates:["JFK","ORD","LAX","SFO","SEA","BOS","HNL","SAN"], euGates:["LHR","CDG","FRA","HEL"] },
+  // Korean Air: ICN → 11 US cities (NOT London/Europe direct from US!)
+  { code:"KE", name:"Korean Air", program:"SKYPASS", alliance:"SkyTeam", color:"#003D82", transfers:["Amex MR"], routes:US|EU|AS|OC|DOM_AS, type:"full-service", hubs:["ICN"], usGates:["JFK","LAX","SFO","ATL","SEA","DFW","ORD","IAD","HNL","LAS","BOS"], euGates:["LHR","CDG","FRA","AMS","FCO","PRG","MAD","ZRH","VIE"] },
+  // EVA Air: TPE → 8 US cities
+  { code:"BR", name:"EVA Air", program:"Infinity MileageLands", alliance:"Star Alliance", color:"#0066CC", transfers:["Amex MR"], routes:US|EU|AS|OC|DOM_AS, type:"full-service", hubs:["TPE"], usGates:["JFK","LAX","SFO","SEA","ORD","IAH","DFW","IAD"], euGates:["LHR","CDG","AMS","VIE","MUC"] },
+  // China Airlines: TPE → 6 US cities (very limited EU)
+  { code:"CI", name:"China Airlines", program:"Dynasty Flyer", alliance:"SkyTeam", color:"#0066CC", transfers:[], routes:US|AS|OC|DOM_AS, type:"full-service", hubs:["TPE"], usGates:["JFK","LAX","SFO","SEA","ONT","HNL"] },
+  // Air China: VERY limited US service — basically JFK only in 2026
+  { code:"CA", name:"Air China", program:"Frequent Flyer", alliance:"Star Alliance", color:"#FF0000", transfers:[], routes:US|EU|AS|DOM_AS, type:"full-service", hubs:["PEK","PVG"], usGates:["JFK"], euGates:["LHR","FRA","CDG","FCO","MAD"] },
+  // Air India: DEL → 4 US cities
+  { code:"AI", name:"Air India", program:"Flying Returns", alliance:"Star Alliance", color:"#0033CC", transfers:[], routes:US|EU|AS|DOM_AS, type:"full-service", hubs:["DEL","BOM"], usGates:["JFK","EWR","ORD","SFO"], euGates:["LHR","CDG","FRA","BRU","MXP","VIE","BER","AMS"] },
+  // Malaysia Airlines: NO US routes — EU/AS/OC only
+  { code:"MH", name:"Malaysia Airlines", program:"Enrich", alliance:"oneworld", color:"#003C71", transfers:[], routes:EU|AS|OC|DOM_AS, type:"full-service", hubs:["KUL"], euGates:["LHR"] },
+
+  // ═══ MIDDLE EAST MEGA-CARRIERS ═══
+  // Emirates: DXB → 14+ US cities
+  { code:"EK", name:"Emirates", program:"Skywards", alliance:"Independent", color:"#D71921", transfers:["Chase UR","Amex MR","Citi TYP","Capital One","Bilt"], routes:US|EU|AS|ME|AF|SA|OC, type:"full-service", hubs:["DXB"], usGates:["JFK","EWR","IAD","BOS","ORD","DFW","IAH","SFO","LAX","SEA","MIA","ATL","MCO","PHX","SAN"], euGates:["LHR","LGW","MAN","GLA","EDI","BER","FRA","MUC","DUS","HAM","CDG","LYS","AMS","FCO","MXP","VCE","BCN","MAD","AGP","ATH","IST","CPH","OSL","ARN","ZRH","GVA","VIE","PRG","BUD","WAW","DUB","LIS"] },
+  // Qatar: DOH → 11 US cities
+  { code:"QR", name:"Qatar Airways", program:"Privilege Club", alliance:"oneworld", color:"#5C0632", transfers:["Citi TYP"], routes:US|EU|AS|ME|AF|SA|OC, type:"full-service", hubs:["DOH"], usGates:["JFK","IAD","ORD","MIA","DFW","IAH","LAX","SFO","ATL","BOS","SEA"], euGates:["LHR","MAN","EDI","BER","FRA","MUC","CDG","AMS","FCO","MXP","VCE","BCN","MAD","ATH","IST","CPH","OSL","ARN","ZRH","GVA","VIE","PRG","BUD","WAW","DUB","HEL"] },
+
+  // ═══ AFRICAN ═══
+  // Ethiopian: ADD → 13 US cities (massive US network!)
+  { code:"ET", name:"Ethiopian Airlines", program:"ShebaMiles", alliance:"Star Alliance", color:"#078930", transfers:[], routes:US|EU|AS|ME|AF, type:"full-service", hubs:["ADD"], usGates:["JFK","EWR","IAD","ORD","IAH","LAX","ATL","BOS","DEN","DTW","MIA","MSP","SFO"], euGates:["LHR","CDG","FRA","FCO","MAD","BRU"] },
+
+  // ═══ SOUTH AMERICAN ═══
+  // LATAM: SCL/GRU → MIA only for US (no NYC, no London!)
+  { code:"LA", name:"LATAM", program:"LATAM Pass", alliance:"Independent", color:"#000000", transfers:["Chase UR","Citi TYP"], routes:US|EU|SA, type:"full-service", hubs:["SCL","GRU","LIM","BOG"], usGates:["MIA"], euGates:["MAD","BCN","LHR","CDG","FRA","FCO","LIS"] },
+
+  // ═══ OCEANIA ═══
+  // Qantas: SYD/MEL → LAX/SFO/DFW/HNL only
+  { code:"QF", name:"Qantas", program:"Frequent Flyer", alliance:"oneworld", color:"#E0002A", transfers:[], routes:US|EU|AS|OC|DOM_AS, type:"full-service", hubs:["SYD","MEL"], usGates:["LAX","SFO","DFW","HNL"], euGates:["LHR"] },
+
+  // ═══ LOW-COST LONG-HAUL ═══
+  // Air Premia: ICN → LAX/SFO/EWR/HNL/IAD
+  { code:"YP", name:"Air Premia", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:US|AS|DOM_AS, type:"lowcost-longhaul", hubs:["ICN"], usGates:["LAX","SFO","EWR","HNL","IAD"] },
+  // ZIPAIR: NRT → SJC/IAH/HNL (NOT LAX/SFO — those are wrong!)
+  { code:"ZG", name:"ZIPAIR", program:null, alliance:"Budget", color:"#000000", transfers:[], routes:US|AS|DOM_AS, type:"lowcost-longhaul", hubs:["NRT"], usGates:["SJC","IAH","HNL"] },
+  // French Bee: ORY → EWR/SFO/LAX/MIA
+  { code:"BF", name:"French Bee", program:null, alliance:"Budget", color:"#FF6B00", transfers:[], routes:US|EU, type:"lowcost-longhaul", hubs:["ORY"], usGates:["EWR","SFO","LAX","MIA"] },
+  // Condor: FRA → JFK/BOS/LAX/SFO/SEA/LAS
+  { code:"DE", name:"Condor", program:null, alliance:"Budget", color:"#FFD700", transfers:[], routes:US|EU, type:"lowcost-longhaul", hubs:["FRA"], usGates:["JFK","BOS","LAX","SFO","SEA","LAS"] },
+  // Norse Atlantic: Reduced 2026 — JFK/MCO to LGW/FCO/ATH only
+  { code:"Z0", name:"Norse Atlantic", program:null, alliance:"Budget", color:"#FF0000", transfers:[], routes:US|EU, type:"lowcost-longhaul", hubs:["LGW"], usGates:["JFK","MCO"], euGates:["LGW","FCO","ATH"] },
+
+  // ═══ BUDGET — US DOMESTIC ═══
   { code:"NK", name:"Spirit Airlines", program:null, alliance:"Budget", color:"#FFD700", transfers:[], routes:DOM_US|CA, type:"budget" },
   { code:"F9", name:"Frontier Airlines", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:DOM_US|CA, type:"budget" },
   { code:"WN", name:"Southwest Airlines", program:null, alliance:"Budget", color:"#0066CC", transfers:["Chase UR"], routes:DOM_US|CA, type:"budget" },
   { code:"MX", name:"Breeze Airways", program:null, alliance:"Budget", color:"#0066CC", transfers:[], routes:DOM_US, type:"budget" },
-  // Budget — Europe
+
+  // ═══ BUDGET — EUROPE DOMESTIC ═══
   { code:"FR", name:"Ryanair", program:null, alliance:"Budget", color:"#003DA5", transfers:[], routes:DOM_EU|AF, type:"budget" },
   { code:"U2", name:"easyJet", program:null, alliance:"Budget", color:"#FFC72C", transfers:[], routes:DOM_EU|AF, type:"budget" },
   { code:"W6", name:"Wizz Air", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:DOM_EU|ME, type:"budget" },
-  { code:"DY", name:"Norwegian", program:null, alliance:"Budget", color:"#FF0000", transfers:[], routes:DOM_EU|US, type:"budget", hubs:["OSL","ARN","CPH","LGW"], usGates:["JFK","LAX","SFO","MCO","MIA","BOS"] },
   { code:"VY", name:"Vueling", program:null, alliance:"Budget", color:"#003DA5", transfers:[], routes:DOM_EU, type:"budget" },
-  // Budget — Canada
+
+  // ═══ BUDGET — CANADA ═══
   { code:"WS", name:"WestJet", program:null, alliance:"Budget", color:"#003D82", transfers:[], routes:DOM_US|CA|US, type:"budget" },
 ];
 
@@ -140,10 +181,10 @@ const AIRLINE_WEBSITES = {
   ET: "ethiopianairlines.com", LA: "latamairlines.com", QF: "qantas.com",
   NK: "spirit.com", F9: "flyfrontier.com", WN: "southwest.com",
   FR: "ryanair.com", U2: "easyjet.com", W6: "wizzair.com",
-  DY: "norwegian.com", VY: "vueling.com", WS: "westjet.com",
+  VY: "vueling.com", WS: "westjet.com",
   MX: "flybreeze.com",
   YP: "airpremia.com", ZG: "zipair.net", BF: "frenchbee.com",
-  DE: "condor.com", Z0: "flynorse.com", OG: "flyplay.com",
+  DE: "condor.com", Z0: "flynorse.com",
 };
 
 function getBookingUrl(airlineCode, origin, dest) {
