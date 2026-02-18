@@ -679,11 +679,36 @@ function canFlyRoute(al, origCode, destCode) {
   const dReg = airportRegion(destCode);
   if (!oReg || !dReg) return false;
 
-  // Same region = domestic route — airline must explicitly have DOM_ flag
+  // Same region = domestic route — airline must have DOM_ flag
+  // PLUS non-Big-3 airlines must fly through one of their hubs
+  // (Hawaiian only flies from HNL, JetBlue from JFK/BOS, etc.)
   if (oReg === dReg) {
-    if (oReg === US) return (al.routes & DOM_US) > 0;
-    if (oReg === EU) return (al.routes & DOM_EU) > 0;
-    if (oReg === AS) return (al.routes & DOM_AS) > 0;
+    if (oReg === US) {
+      if (!(al.routes & DOM_US)) return false;
+      // US Big 3 + budget can fly any US domestic
+      if (al.code === "UA" || al.code === "AA" || al.code === "DL") return true;
+      if (al.type === "budget") return true;
+      // Everyone else: at least one end must be their hub
+      if (al.hubs && al.hubs.length > 0) {
+        return al.hubs.includes(origCode) || al.hubs.includes(destCode);
+      }
+      return true;
+    }
+    if (oReg === EU) {
+      if (!(al.routes & DOM_EU)) return false;
+      if (al.type === "budget") return true; // Ryanair etc fly point-to-point
+      if (al.hubs && al.hubs.length > 0) {
+        return al.hubs.includes(origCode) || al.hubs.includes(destCode);
+      }
+      return true;
+    }
+    if (oReg === AS) {
+      if (!(al.routes & DOM_AS)) return false;
+      if (al.hubs && al.hubs.length > 0) {
+        return al.hubs.includes(origCode) || al.hubs.includes(destCode);
+      }
+      return true;
+    }
     return (al.routes & oReg) > 0;
   }
 
