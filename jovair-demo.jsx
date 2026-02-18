@@ -977,6 +977,28 @@ function generateFlights(parsed) {
 
   // Sort by price (cash), cheapest first
   results.sort((a, b) => (a.cash || 999999) - (b.cash || 999999));
+
+  // ── ROUND TRIP: Generate return flights ──
+  if (parsed.roundTrip && parsed.dateWindow?.returnStart) {
+    const returnParsed = {
+      ...parsed,
+      origins: parsed.destinations,
+      destinations: parsed.origins,
+      dateWindow: {
+        start: parsed.dateWindow.returnStart,
+        end: parsed.dateWindow.returnEnd || new Date(parsed.dateWindow.returnStart.getTime() + 2 * 864e5),
+      },
+      roundTrip: false, // prevent infinite recursion
+    };
+    const returnFlights = generateFlights(returnParsed);
+    // Tag all return flights
+    returnFlights.forEach(f => { f.isReturn = true; f.id = "ret-" + f.id; });
+    // Tag outbound flights
+    results.forEach(f => { f.isReturn = false; });
+    return [...results, ...returnFlights];
+  }
+
+  results.forEach(f => { f.isReturn = false; });
   return results;
 }
 
@@ -1206,15 +1228,112 @@ async function parseAI(query) {
     const originCity = AIRPORTS.find(a=>origins.includes(a.code));
     const destCity = AIRPORTS.find(a=>dests.includes(a.code));
     const dateLabel = dateRange.label || "Flexible";
-    return {origins,destinations:dests,cabin,alliance,program:null,dateRange:dateLabel,dateWindow:dateRange,maxMiles:null,isExplore:false,summary:`${cabin} flights from ${originCity?.city||origins[0]} to ${destCity?.city||dests[0]}${dateLabel!=="Flexible"?` · ${dateLabel}`:""}`};
+    const isRT = dateRange.roundTrip || false;
+    return {origins,destinations:dests,cabin,alliance,program:null,dateRange:dateLabel,dateWindow:dateRange,maxMiles:null,isExplore:false,roundTrip:isRT,summary:`${isRT?"Round trip":""}${cabin} flights from ${originCity?.city||origins[0]} to ${destCity?.city||dests[0]}${dateLabel!=="Flexible"?` · ${dateLabel}`:""}`};
   }
 }
 
 // Parse date/timing hints from a query and return {startDate, endDate, label}
+// Also detects round-trip patterns like "april 4th to april 9th" or "mar 20 returning mar 27"
 function parseDateHints(q) {
   const now = new Date();
   const y = now.getFullYear();
   const ny = y + 1;
+
+  const MONTH_NAMES_RT = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+  const SHORT_MONTHS_RT = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+
+  // ── ROUND TRIP DETECTION ──
+  // Pattern: "april 4th to april 9th", "march 20 - march 27", "mar 5 returning mar 12"
+  // Also: "april 4 to 9" (same month), "4/4 to 4/9", "apr 4 - apr 9"
+  // Key insight: if both dates are specific days (not just month names), it's a round trip
+
+  // Cross-month or same-month with full month names: "april 4th to april 9th", "march 20 to april 5"
+  for (let i = 0; i < 12; i++) {
+    for (let j = 0; j < 12; j++) {
+      const pat = new RegExp(
+        `(?:${MONTH_NAMES_RT[i]}|${SHORT_MONTHS_RT[i]})\\s+(\\d{1,2})(?:st|nd|rd|th)?` +
+        `\\s*(?:to|[-–]|through|thru|returning|return|coming back)\\s*` +
+        `(?:${MONTH_NAMES_RT[j]}|${SHORT_MONTHS_RT[j]})\\s+(\\d{1,2})(?:st|nd|rd|th)?`
+      );
+      const m = q.match(pat);
+      if (m) {
+        const d1 = parseInt(m[1]), d2 = parseInt(m[2]);
+        if (d1 >= 1 && d1 <= 31 && d2 >= 1 && d2 <= 31) {
+          let outDate = new Date(y, i, d1);
+          let retDate = new Date(j < i ? ny : y, j, d2);
+          if (outDate < now) { outDate = new Date(ny, i, d1); retDate = new Date(j < i ? ny + 1 : ny, j, d2); }
+          const sf = d => { const dd=d.getDate(); return dd===1||dd===21||dd===31?"st":dd===2||dd===22?"nd":dd===3||dd===23?"rd":"th"; };
+          const outLabel = `${MONTH_NAMES_RT[i].charAt(0).toUpperCase()+MONTH_NAMES_RT[i].slice(1)} ${d1}${sf(outDate)}`;
+          const retLabel = `${MONTH_NAMES_RT[j].charAt(0).toUpperCase()+MONTH_NAMES_RT[j].slice(1)} ${d2}${sf(retDate)}`;
+          return {
+            start: outDate, end: new Date(outDate.getTime() + 2 * 864e5), // 2-day window for outbound
+            returnStart: retDate, returnEnd: new Date(retDate.getTime() + 2 * 864e5),
+            roundTrip: true,
+            label: `${outLabel} → ${retLabel} (Round trip)`
+          };
+        }
+      }
+    }
+  }
+
+  // Same month shorthand: "april 4 to 9", "march 20-27" as round trip
+  // BUT only if the gap is 2+ days (1-day gap could be a date range)
+  for (let i = 0; i < 12; i++) {
+    const pat = new RegExp(
+      `(?:${MONTH_NAMES_RT[i]}|${SHORT_MONTHS_RT[i]})\\s+(\\d{1,2})(?:st|nd|rd|th)?` +
+      `\\s*(?:to|[-–]|through|thru)\\s*(\\d{1,2})(?:st|nd|rd|th)?(?!\\s*(?:${MONTH_NAMES_RT.join('|')}|${SHORT_MONTHS_RT.join('|')}))`
+    );
+    const m = q.match(pat);
+    if (m) {
+      const d1 = parseInt(m[1]), d2 = parseInt(m[2]);
+      if (d1 >= 1 && d1 <= 31 && d2 >= 1 && d2 <= 31 && d2 > d1 && (d2 - d1) >= 2) {
+        let outDate = new Date(y, i, d1);
+        let retDate = new Date(y, i, d2);
+        if (outDate < now) { outDate = new Date(ny, i, d1); retDate = new Date(ny, i, d2); }
+        const sf = d => { const dd=d.getDate(); return dd===1||dd===21||dd===31?"st":dd===2||dd===22?"nd":dd===3||dd===23?"rd":"th"; };
+        const mn = MONTH_NAMES_RT[i].charAt(0).toUpperCase()+MONTH_NAMES_RT[i].slice(1);
+        return {
+          start: outDate, end: new Date(outDate.getTime() + 2 * 864e5),
+          returnStart: retDate, returnEnd: new Date(retDate.getTime() + 2 * 864e5),
+          roundTrip: true,
+          label: `${mn} ${d1}${sf(outDate)} → ${mn} ${d2}${sf(retDate)} (Round trip)`
+        };
+      }
+    }
+  }
+
+  // Numeric round trip: "4/4 to 4/9", "4/4 - 4/9"
+  const numRT = q.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s*(?:to|[-–]|through|returning)\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+  if (numRT) {
+    const m1 = parseInt(numRT[1]) - 1, d1 = parseInt(numRT[2]);
+    const m2 = parseInt(numRT[4]) - 1, d2 = parseInt(numRT[5]);
+    let y1 = numRT[3] ? parseInt(numRT[3]) : y;
+    let y2 = numRT[6] ? parseInt(numRT[6]) : y;
+    if (y1 < 100) y1 += 2000;
+    if (y2 < 100) y2 += 2000;
+    if (m1 >= 0 && m1 <= 11 && m2 >= 0 && m2 <= 11 && d1 >= 1 && d1 <= 31 && d2 >= 1 && d2 <= 31) {
+      let outDate = new Date(y1, m1, d1);
+      let retDate = new Date(y2, m2, d2);
+      if (outDate < now && !numRT[3]) { outDate = new Date(ny, m1, d1); retDate = new Date(ny, m2, d2); }
+      const sf = d => { const dd=d.getDate(); return dd===1||dd===21||dd===31?"st":dd===2||dd===22?"nd":dd===3||dd===23?"rd":"th"; };
+      const mn1 = MONTH_NAMES_RT[m1].charAt(0).toUpperCase()+MONTH_NAMES_RT[m1].slice(1);
+      const mn2 = MONTH_NAMES_RT[m2].charAt(0).toUpperCase()+MONTH_NAMES_RT[m2].slice(1);
+      return {
+        start: outDate, end: new Date(outDate.getTime() + 2 * 864e5),
+        returnStart: retDate, returnEnd: new Date(retDate.getTime() + 2 * 864e5),
+        roundTrip: true,
+        label: `${mn1} ${d1}${sf(outDate)} → ${mn2} ${d2}${sf(retDate)} (Round trip)`
+      };
+    }
+  }
+
+  // "returning [date]" or "return [date]" or "come back [date]" after a single departure date
+  // This catches patterns like "nyc to london march 5 returning march 12"
+  const retMatch = q.match(/(?:returning|return|come back|coming back|back)\s+(?:on\s+)?/);
+  if (retMatch) {
+    // Already handled above in cross-month patterns — this is a fallback
+  }
 
   // Event-based dates (approximate windows people would travel)
   const EVENT_DATES = {
@@ -1457,6 +1576,7 @@ export default function Jovair() {
   const [filterTransfer, setFilterTransfer] = useState(null);
   const [filterNonstop, setFilterNonstop] = useState(false);
   const [filterSelfTransfer, setFilterSelfTransfer] = useState(false);
+  const [tripDirection, setTripDirection] = useState("outbound"); // "outbound" | "return"
   const [filterMaxPrice, setFilterMaxPrice] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [scanIndex, setScanIndex] = useState(0);
@@ -1485,6 +1605,8 @@ export default function Jovair() {
     setFilterAlliance("All");
     setFilterTransfer(null);
     setFilterNonstop(false);
+    setFilterSelfTransfer(false);
+    setTripDirection("outbound");
     setFilterMaxPrice(null);
     setShowHistory(false);
 
@@ -1575,6 +1697,8 @@ export default function Jovair() {
     setFilterAlliance("All");
     setFilterTransfer(null);
     setFilterNonstop(false);
+    setFilterSelfTransfer(false);
+    setTripDirection("outbound");
     setFilterMaxPrice(null);
     setParsed(p);
 
@@ -1615,6 +1739,11 @@ export default function Jovair() {
 
   const filtered = useMemo(() => {
     let f = [...flights];
+    // Round trip direction filter
+    const hasReturn = flights.some(fl => fl.isReturn);
+    if (hasReturn) {
+      f = f.filter(fl => tripDirection === "return" ? fl.isReturn : !fl.isReturn);
+    }
     if (filterAlliance!=="All") {
       console.log("[Jovair Filter] Alliance:", filterAlliance, "| Before:", f.length, "| Alliances in results:", [...new Set(f.map(fl=>fl.airline?.alliance))]);
       f=f.filter(fl=>fl.airline.alliance===filterAlliance);
@@ -1631,20 +1760,23 @@ export default function Jovair() {
     else if (sortBy==="fastest") f.sort((a,b)=>dir*((a.durationMin||9999)-(b.durationMin||9999)));
     else if (sortBy==="nonstop") f.sort((a,b)=>dir*((a.stops||99)-(b.stops||99)));
     return f;
-  }, [flights,sortBy,sortDir,filterAlliance,filterTransfer,filterNonstop,filterSelfTransfer,filterMaxPrice]);
+  }, [flights,sortBy,sortDir,filterAlliance,filterTransfer,filterNonstop,filterSelfTransfer,filterMaxPrice,tripDirection]);
 
   const stats = useMemo(()=>{
-    if (!flights.length) return null;
-    const milesFlights = flights.filter(f=>f.miles);
+    // Use direction-filtered flights for stats
+    const hasReturn = flights.some(fl => fl.isReturn);
+    const dirFlights = hasReturn ? flights.filter(fl => tripDirection === "return" ? fl.isReturn : !fl.isReturn) : flights;
+    if (!dirFlights.length) return null;
+    const milesFlights = dirFlights.filter(f=>f.miles);
     return {
       bestMiles:milesFlights.length ? Math.min(...milesFlights.map(f=>f.miles)) : 0,
-      bestCash:Math.min(...flights.map(f=>f.cash)),
+      bestCash:Math.min(...dirFlights.map(f=>f.cash)),
       bestCpm:milesFlights.length ? Math.max(...milesFlights.map(f=>f.cpm||0)) : 0,
       avgCpm:milesFlights.length ? +(milesFlights.reduce((s,f)=>s+(f.cpm||0),0)/milesFlights.length).toFixed(1) : 0,
-      nonstops:flights.filter(f=>f.nonstop).length,
-      totalResults:flights.length,
+      nonstops:dirFlights.filter(f=>f.nonstop).length,
+      totalResults:dirFlights.length,
     };
-  },[flights]);
+  },[flights,tripDirection]);
 
   const aBestMiles = useCountUp(stats?.bestMiles||0);
   const aBestCash = useCountUp(stats?.bestCash||0);
@@ -2142,6 +2274,23 @@ export default function Jovair() {
               <div style={{fontSize:10,color:s.muted,marginTop:2}}>{m.sub}</div>
             </div>
           ))}
+        </div>
+      )}
+
+      {flights.some(fl => fl.isReturn) && (
+        <div style={{display:"flex",gap:0,marginBottom:16,borderRadius:12,overflow:"hidden",border:"1px solid #e8eaef"}}>
+          <button onClick={()=>setTripDirection("outbound")} style={{flex:1,padding:"14px 28px",fontSize:14,fontWeight:700,cursor:"pointer",border:"none",background:tripDirection==="outbound"?s.teal:"#fff",color:tripDirection==="outbound"?"#fff":s.navy,transition:"all 0.2s"}}>
+            <span style={{fontSize:18,marginRight:8}}>&#9992;</span> Outbound
+            <span style={{display:"block",fontSize:11,fontWeight:400,marginTop:2,opacity:0.8}}>
+              {parsed?.origins?.[0]} → {parsed?.destinations?.[0]}
+            </span>
+          </button>
+          <button onClick={()=>setTripDirection("return")} style={{flex:1,padding:"14px 28px",fontSize:14,fontWeight:700,cursor:"pointer",border:"none",borderLeft:"1px solid #e8eaef",background:tripDirection==="return"?s.teal:"#fff",color:tripDirection==="return"?"#fff":s.navy,transition:"all 0.2s"}}>
+            <span style={{fontSize:18,marginRight:8}}>&#9992;</span> Return
+            <span style={{display:"block",fontSize:11,fontWeight:400,marginTop:2,opacity:0.8}}>
+              {parsed?.destinations?.[0]} → {parsed?.origins?.[0]}
+            </span>
+          </button>
         </div>
       )}
 
